@@ -187,6 +187,22 @@ function renderer.drawMaze(maze, config)
     end
 end
 
+function renderer.drawGhosts(ghosts, config)
+    local tileSize = config.tileSize
+    local pixelSize = config.pixelSize
+
+    for i,ghost in ipairs(ghosts) do
+        love.graphics.setColor(ghost.color[1], ghost.color[2], ghost.color[3]);
+        love.graphics.rectangle("fill", ghost.x * pixelSize - (tileSize * .75), ghost.y * pixelSize - (tileSize * .75), tileSize * 1.5, tileSize * 1.5);
+        love.graphics.setColor(1,1,1);
+        love.graphics.circle("fill", ghost.x * pixelSize - (tileSize / 3), ghost.y * pixelSize - (tileSize / 3), 6);
+        love.graphics.circle("fill", ghost.x * pixelSize + (tileSize / 3), ghost.y * pixelSize - (tileSize / 3), 6);
+        love.graphics.setColor(0,0,0);
+        love.graphics.circle("fill", ghost.x * pixelSize - (tileSize / 3), ghost.y * pixelSize - (tileSize / 3), 3.5);
+        love.graphics.circle("fill", ghost.x * pixelSize + (tileSize / 3), ghost.y * pixelSize - (tileSize / 3), 3.5);
+    end
+end
+
 function renderer.drawPacman(pac, config)
     local tileSize = config.tileSize
     local colors = config.colors

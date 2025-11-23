@@ -1,5 +1,4 @@
-local DEBUG=false
-
+local DEBUG=true
 local PIXEL_SIZE= 3
 local TILE_SIZE = PIXEL_SIZE * 8
 local WALL_PADDING = 1
@@ -49,19 +48,114 @@ local renderConfig = {
 local pac = {
     x = 14 * PIXELS_PER_TILE,
     y = 23.5 * PIXELS_PER_TILE,
-    xTile = 0,
-    yTile = 0,
+    xTile, yTile = pixelToTile(14 * PIXELS_PER_TILE, 23.5 * PIXELS_PER_TILE),
     speed = 1,
     direction = "none",
 }
 
-local function getTile(row, col)
-    local line = maze[row]
-    if not line then
-        return nil
-    end
-    return line:sub(col, col)
-end
+local ghosts = {
+    {
+        name = "Blinky",
+        color = { 1, 0, 0 },
+        x = 14 * PIXELS_PER_TILE,
+        y = 11.5 * PIXELS_PER_TILE,
+        xTile, yTile = pixelToTile(14 * PIXELS_PER_TILE,11.5 * PIXELS_PER_TILE),
+        setTarget = function(self, pac)
+            -- Example: Blinky targets Pac-Man's current tile
+            self.targetX = pac.xTile
+            self.targetY = pac.yTile
+        end,
+    },
+    {
+        name = "Pinky",
+        color = { 1, .7, 1 },
+        x = 12 * PIXELS_PER_TILE,
+        y = 11.5 * PIXELS_PER_TILE,
+        xTile, yTile = pixelToTile(12 * PIXELS_PER_TILE,11.5 * PIXELS_PER_TILE),
+        setTarget = function(self, pac)
+            -- Example: Blinky targets Pac-Man's current tile
+            if pac.direction == "left" then
+                self.targetX = pac.xTile - 4
+                self.targetY = pac.yTile
+            elseif pac.direction == "right" then
+                self.targetX = pac.xTile + 4
+                self.targetY = pac.yTile
+            elseif pac.direction == "up" then
+                self.targetX = pac.xTile - 4 -- maintain overflow bug
+                self.targetY = pac.yTile - 4
+            elseif pac.direction == "down" then
+                self.targetX = pac.xTile
+                self.targetY = pac.yTile + 4
+            else
+                self.targetX = pac.xTile - 4
+                self.targetY = pac.yTile
+            end
+        end,
+    },
+    {
+        name = "Inky",
+        color = { .5, .7, 1 },
+        x = 16 * PIXELS_PER_TILE,
+        y = 11.5 * PIXELS_PER_TILE,
+        xTile, yTile = pixelToTile(16 * PIXELS_PER_TILE,11.5 * PIXELS_PER_TILE),
+        setTarget = function(self, pac, ghosts)
+            local anchorX, anchorY;
+            -- Example: Blinky targets Pac-Man's current tile
+            if pac.direction == "left" then
+                anchorX = pac.xTile - 2
+                anchorY = pac.yTile
+            elseif pac.direction == "right" then
+                anchorX = pac.xTile + 2
+                anchorY = pac.yTile
+            elseif pac.direction == "up" then
+                anchorX = pac.xTile - 2 -- preserve lookup bug
+                anchorY = pac.yTile - 2
+            elseif pac.direction == "down" then
+                anchorX = pac.xTile
+                anchorY = pac.yTile + 2
+            else
+                anchorX = pac.xTile - 2
+                anchorY = pac.yTile
+            end
+
+            local blinky = nil
+            for i, ghost in ipairs(ghosts) do
+                if ghost.name == "Blinky" then
+                    blinky = ghost
+                    break
+                end
+            end
+
+            local blinkyX, blinkyY = pixelToTile(blinky.x, blinky.y);
+
+            local vx = anchorX - blinkyX
+            local vy = anchorY - blinkyY
+            self.targetX = blinkyX + 2 * vx
+            self.targetY = blinkyY + 2 * vy
+        end,
+    },
+    {
+        name = "Clyde",
+        color = { 1, .5, .2 },
+        x = 18 * PIXELS_PER_TILE,
+        y = 11.5 * PIXELS_PER_TILE,
+        setTarget = function(self, pac)
+            -- Note: self.xTile/yTile are not updated during movement, 
+            --   use pixelToTile(self.x, self.y) to get Clyde's current tile position.
+            local xTile, yTile = pixelToTile(self.x, self.y)
+            local dx = xTile - pac.xTile
+            local dy = yTile - pac.yTile
+            local distance = math.sqrt(dx * dx + dy * dy)
+            if (distance >= 8) then
+                self.targetX = pac.xTile
+                self.targetY = pac.yTile
+            else
+                self.targetX = 1
+                self.targetY = 31
+            end
+        end,
+    },
+}
 
 local function isWall(row, col)
     return getTile(row, col) == "#"
@@ -163,12 +257,13 @@ function love.update(dt)
     -- Update animation timers
     timer.powerBlink = (timer.powerBlink + dt) % 0.30
 
+    for i, ghost in ipairs(ghosts) do
+        ghost:setTarget(pac, ghosts)
+    end
 end
 
 function love.draw()
     Renderer.drawMaze(maze, renderConfig)
-    Renderer.drawPacman(pac, renderConfig)
-
     love.graphics.setColor(.9, .9, .9);
     
     for _,dot in ipairs(dots) do
@@ -196,13 +291,23 @@ function love.draw()
         )
         love.graphics.setColor(1, 1, 1, 1)
     end
+
+    Renderer.drawPacman(pac, renderConfig)
+    Renderer.drawGhosts(ghosts, renderConfig);
+
+
+
     if (DEBUG) then
         local colTile, rowTile = pixelToTile(pac.x, pac.y);
         love.graphics.print("Pac tile: " .. colTile .. "." .. rowTile, 10, 300);
         love.graphics.print("Dots left: " .. #dots, 10, 310)
         if maze[rowTile][colTile] == 1 then
-            love.graphics.setColor(1,.1,.1,.5);
+            love.graphics.setColor(.1,1,.1,.5);
             love.graphics.rectangle("fill", (colTile - 1) * TILE_SIZE, (rowTile - 1) * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+        end
+        for i, ghost in ipairs(ghosts) do
+            love.graphics.setColor(ghost.color[1], ghost.color[2], ghost.color[3], .5);
+            love.graphics.rectangle("fill", (ghost.targetX - 1) * TILE_SIZE, (ghost.targetY - 1) * TILE_SIZE, TILE_SIZE, TILE_SIZE);
         end
     end
 end

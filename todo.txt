@@ -1,0 +1,18 @@
+1. add blinky, targeting/movement logic, detect collision
+
+2. add pinky with different targeting
+3. add the other two
+
+4. power pellets
+
+5. round completion/reset
+
+6. fruit
+
+7. ghost house stuff
+
+8. tunnels
+
+9.  scoring
+
+10. basic sounds
