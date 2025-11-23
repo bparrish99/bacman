@@ -1,5 +1,5 @@
-local DEBUG=true
-local PIXEL_SIZE= 3
+local DEBUG=false
+local PIXEL_SIZE= 4
 local TILE_SIZE = PIXEL_SIZE * 8
 local WALL_PADDING = 1
 local PELLET_RADIUS = 2
@@ -268,39 +268,38 @@ function love.update(dt)
         if ghost.direction == "left" then
             ghost.x = ghost.x - ghost.speed
             if (ghost.x % PIXELS_PER_TILE <= PIXELS_PER_TILE / 2) then 
-                ghost.direction = ghost.nextDir
-                if (maze[ghost.yTile][ghost.xTile - 1] ~= 1) then
+                if (maze[ghost.yTile][ghost.xTile - 1] ~= 1 or ghost.nextDir == "up" or ghost.nextDir == "down") then
                     ghost.x = ghost.xTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
+                    ghost.direction = ghost.nextDir
                 end
             end  
         elseif ghost.direction == "right" then
             ghost.x = ghost.x + ghost.speed
             if (ghost.x % PIXELS_PER_TILE >= PIXELS_PER_TILE / 2) then 
-                ghost.direction = ghost.nextDir
-                if (maze[ghost.yTile][ghost.xTile + 1] ~= 1) then
+                if (maze[ghost.yTile][ghost.xTile + 1] ~= 1 or ghost.nextDir == "up" or ghost.nextDir == "down") then
                     ghost.x = ghost.xTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
+                    ghost.direction = ghost.nextDir
                 end
             end  
         elseif ghost.direction == "up" then
             ghost.y = ghost.y - ghost.speed
             if (ghost.y % PIXELS_PER_TILE <= PIXELS_PER_TILE / 2) then 
-                ghost.direction = ghost.nextDir
-                if (maze[ghost.yTile - 1][ghost.xTile] ~= 1) then
+                if (maze[ghost.yTile - 1][ghost.xTile] ~= 1 or ghost.nextDir == "left" or ghost.nextDir == "right") then
                     ghost.y = ghost.yTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
+                    ghost.direction = ghost.nextDir
                 end
             end  
         elseif ghost.direction == "down" then
             ghost.y = ghost.y + ghost.speed
             if (ghost.y % PIXELS_PER_TILE >= PIXELS_PER_TILE / 2) then 
-                ghost.direction = ghost.nextDir
-                if (maze[ghost.yTile + 1][ghost.xTile] ~= 1) then
+                if (maze[ghost.yTile + 1][ghost.xTile] ~= 1 or ghost.nextDir == "left" or ghost.nextDir == "right") then
                     ghost.y = ghost.yTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
+                    ghost.direction = ghost.nextDir
                 end
             end  
         end
         local newXTile, newYTile = pixelToTile(ghost.x, ghost.y)
         if (newXTile ~= ghost.xTile or newYTile ~= ghost.yTile) then
-            print("NEW TILE, pick NEXT TILE");
             ghost.xTile = newXTile
             ghost.yTile = newYTile
             local candidates = {}
@@ -316,9 +315,9 @@ function love.update(dt)
             if maze[ghost.yTile][ghost.xTile + 1] == 1 and ghost.direction ~= "left" then
                 candidates[#candidates + 1] = {ghost.xTile+1, ghost.yTile}
             end
-
+            ghost.latestCandidateCount = #candidates
             local closest
-            local closestDist = 999
+            local closestDist = math.huge
             for _, cand in ipairs(candidates) do
                 local dx = cand[1] - ghost.targetX
                 local dy = cand[2] - ghost.targetY
@@ -331,12 +330,16 @@ function love.update(dt)
 
             if closest then
                 if closest[1] < ghost.xTile then
+                    ghost.report = "Entered tile "..newXTile.."/"..newYTile..", decided to go left"
                     ghost.nextDir = "left"
                 elseif closest[1] > ghost.xTile then
+                    ghost.report = "Entered tile "..newXTile.."/"..newYTile..", decided to go right"
                     ghost.nextDir = "right"
                 elseif closest[2] < ghost.yTile then
+                    ghost.report = "Entered tile "..newXTile.."/"..newYTile..", decided to go up"
                     ghost.nextDir = "up"
                 elseif closest[2] > ghost.yTile then
+                    ghost.report = "Entered tile "..newXTile.."/"..newYTile..", decided to go down"
                     ghost.nextDir = "down"
                 end
             end
@@ -383,8 +386,6 @@ function love.draw()
     if (DEBUG) then
         love.graphics.setColor(1,1,1);
         local colTile, rowTile = pixelToTile(pac.x, pac.y);
-        love.graphics.print("Pac tile: " .. colTile .. "." .. rowTile, 10, 300);
-        love.graphics.print("Dots left: " .. #dots, 10, 310)
         if maze[rowTile][colTile] == 1 then
             love.graphics.setColor(.1,1,.1,.5);
             love.graphics.rectangle("fill", (colTile - 1) * TILE_SIZE, (rowTile - 1) * TILE_SIZE, TILE_SIZE, TILE_SIZE);
@@ -392,6 +393,22 @@ function love.draw()
         for i, ghost in ipairs(ghosts) do
             love.graphics.setColor(ghost.color[1], ghost.color[2], ghost.color[3], .5);
             love.graphics.rectangle("fill", (ghost.targetX - 1) * TILE_SIZE, (ghost.targetY - 1) * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            love.graphics.setColor(1,1,1);
+            love.graphics.print(ghost.name, 10, i*150)
+            love.graphics.print('x/y: ' .. ghost.x .. "/" .. ghost.y, 10, i*150 + 15)
+            love.graphics.print('xTile/yTile: ' .. ghost.xTile .. "/" .. ghost.yTile, 10, i*150 + 30)
+            love.graphics.print('targetX/targetY: ' .. ghost.targetX .. "/" .. ghost.targetY, 10, i*150 + 45)
+            love.graphics.print('direction: ' .. ghost.direction, 10, i*150 + 60)
+            if(ghost.nextDir) then
+                love.graphics.print('nextDir: ' .. ghost.nextDir, 10, i*150 + 75)
+            end
+            if(ghost.latestCandidateCount) then
+                love.graphics.print('latestCandidateCount: ' .. ghost.latestCandidateCount, 10, i*150 + 90)
+            end
+            if(ghost.report) then
+                love.graphics.print('Report: ' .. ghost.report, 10, i*150 + 105)
+            end
+
         end
     end
 end
