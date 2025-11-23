@@ -59,7 +59,8 @@ local ghosts = {
         color = { 1, 0, 0 },
         x = 14 * PIXELS_PER_TILE,
         y = 11.5 * PIXELS_PER_TILE,
-        xTile, yTile = pixelToTile(14 * PIXELS_PER_TILE,11.5 * PIXELS_PER_TILE),
+        direction = "left",
+        speed = .85,
         setTarget = function(self, pac)
             -- Example: Blinky targets Pac-Man's current tile
             self.targetX = pac.xTile
@@ -71,7 +72,8 @@ local ghosts = {
         color = { 1, .7, 1 },
         x = 12 * PIXELS_PER_TILE,
         y = 11.5 * PIXELS_PER_TILE,
-        xTile, yTile = pixelToTile(12 * PIXELS_PER_TILE,11.5 * PIXELS_PER_TILE),
+        direction = "left",
+        speed = .70,
         setTarget = function(self, pac)
             -- Example: Blinky targets Pac-Man's current tile
             if pac.direction == "left" then
@@ -97,7 +99,8 @@ local ghosts = {
         color = { .5, .7, 1 },
         x = 16 * PIXELS_PER_TILE,
         y = 11.5 * PIXELS_PER_TILE,
-        xTile, yTile = pixelToTile(16 * PIXELS_PER_TILE,11.5 * PIXELS_PER_TILE),
+        direction = "left",
+        speed = .70,
         setTarget = function(self, pac, ghosts)
             local anchorX, anchorY;
             -- Example: Blinky targets Pac-Man's current tile
@@ -139,6 +142,8 @@ local ghosts = {
         color = { 1, .5, .2 },
         x = 18 * PIXELS_PER_TILE,
         y = 11.5 * PIXELS_PER_TILE,
+        direction = "left",
+        speed = .70,
         setTarget = function(self, pac)
             -- Note: self.xTile/yTile are not updated during movement, 
             --   use pixelToTile(self.x, self.y) to get Clyde's current tile position.
@@ -259,6 +264,84 @@ function love.update(dt)
 
     for i, ghost in ipairs(ghosts) do
         ghost:setTarget(pac, ghosts)
+        ghost.xTile, ghost.yTile = pixelToTile(ghost.x, ghost.y);
+        if ghost.direction == "left" then
+            ghost.x = ghost.x - ghost.speed
+            if (ghost.x % PIXELS_PER_TILE <= PIXELS_PER_TILE / 2) then 
+                ghost.direction = ghost.nextDir
+                if (maze[ghost.yTile][ghost.xTile - 1] ~= 1) then
+                    ghost.x = ghost.xTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
+                end
+            end  
+        elseif ghost.direction == "right" then
+            ghost.x = ghost.x + ghost.speed
+            if (ghost.x % PIXELS_PER_TILE >= PIXELS_PER_TILE / 2) then 
+                ghost.direction = ghost.nextDir
+                if (maze[ghost.yTile][ghost.xTile + 1] ~= 1) then
+                    ghost.x = ghost.xTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
+                end
+            end  
+        elseif ghost.direction == "up" then
+            ghost.y = ghost.y - ghost.speed
+            if (ghost.y % PIXELS_PER_TILE <= PIXELS_PER_TILE / 2) then 
+                ghost.direction = ghost.nextDir
+                if (maze[ghost.yTile - 1][ghost.xTile] ~= 1) then
+                    ghost.y = ghost.yTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
+                end
+            end  
+        elseif ghost.direction == "down" then
+            ghost.y = ghost.y + ghost.speed
+            if (ghost.y % PIXELS_PER_TILE >= PIXELS_PER_TILE / 2) then 
+                ghost.direction = ghost.nextDir
+                if (maze[ghost.yTile + 1][ghost.xTile] ~= 1) then
+                    ghost.y = ghost.yTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
+                end
+            end  
+        end
+        local newXTile, newYTile = pixelToTile(ghost.x, ghost.y)
+        if (newXTile ~= ghost.xTile or newYTile ~= ghost.yTile) then
+            print("NEW TILE, pick NEXT TILE");
+            ghost.xTile = newXTile
+            ghost.yTile = newYTile
+            local candidates = {}
+            if maze[ghost.yTile - 1][ghost.xTile] == 1 and ghost.direction ~= "down" then
+                candidates[#candidates + 1] = {ghost.xTile, ghost.yTile-1}
+            end
+            if maze[ghost.yTile + 1][ghost.xTile] == 1 and ghost.direction ~= "up" then
+                candidates[#candidates + 1] = {ghost.xTile, ghost.yTile+1}
+            end
+            if maze[ghost.yTile][ghost.xTile - 1] == 1 and ghost.direction ~= "right" then
+                candidates[#candidates + 1] = {ghost.xTile-1, ghost.yTile}
+            end
+            if maze[ghost.yTile][ghost.xTile + 1] == 1 and ghost.direction ~= "left" then
+                candidates[#candidates + 1] = {ghost.xTile+1, ghost.yTile}
+            end
+
+            local closest
+            local closestDist = 999
+            for _, cand in ipairs(candidates) do
+                local dx = cand[1] - ghost.targetX
+                local dy = cand[2] - ghost.targetY
+                local dist = dx * dx + dy * dy -- distance squared for efficiency
+                if dist < closestDist then
+                    closestDist = dist
+                    closest = cand
+                end
+            end
+
+            if closest then
+                if closest[1] < ghost.xTile then
+                    ghost.nextDir = "left"
+                elseif closest[1] > ghost.xTile then
+                    ghost.nextDir = "right"
+                elseif closest[2] < ghost.yTile then
+                    ghost.nextDir = "up"
+                elseif closest[2] > ghost.yTile then
+                    ghost.nextDir = "down"
+                end
+            end
+        end
+
     end
 end
 
@@ -298,6 +381,7 @@ function love.draw()
 
 
     if (DEBUG) then
+        love.graphics.setColor(1,1,1);
         local colTile, rowTile = pixelToTile(pac.x, pac.y);
         love.graphics.print("Pac tile: " .. colTile .. "." .. rowTile, 10, 300);
         love.graphics.print("Dots left: " .. #dots, 10, 310)

@@ -195,11 +195,11 @@ function renderer.drawGhosts(ghosts, config)
         love.graphics.setColor(ghost.color[1], ghost.color[2], ghost.color[3]);
         love.graphics.rectangle("fill", ghost.x * pixelSize - (tileSize * .75), ghost.y * pixelSize - (tileSize * .75), tileSize * 1.5, tileSize * 1.5);
         love.graphics.setColor(1,1,1);
-        love.graphics.circle("fill", ghost.x * pixelSize - (tileSize / 3), ghost.y * pixelSize - (tileSize / 3), 6);
-        love.graphics.circle("fill", ghost.x * pixelSize + (tileSize / 3), ghost.y * pixelSize - (tileSize / 3), 6);
+        love.graphics.circle("fill", ghost.x * pixelSize - (tileSize / 3), ghost.y * pixelSize - (tileSize / 3), tileSize * .3);
+        love.graphics.circle("fill", ghost.x * pixelSize + (tileSize / 3), ghost.y * pixelSize - (tileSize / 3), tileSize * .3);
         love.graphics.setColor(0,0,0);
-        love.graphics.circle("fill", ghost.x * pixelSize - (tileSize / 3), ghost.y * pixelSize - (tileSize / 3), 3.5);
-        love.graphics.circle("fill", ghost.x * pixelSize + (tileSize / 3), ghost.y * pixelSize - (tileSize / 3), 3.5);
+        love.graphics.circle("fill", ghost.x * pixelSize - (tileSize / 3), ghost.y * pixelSize - (tileSize / 3), tileSize * .15);
+        love.graphics.circle("fill", ghost.x * pixelSize + (tileSize / 3), ghost.y * pixelSize - (tileSize / 3), tileSize * .15);
     end
 end
 
@@ -209,7 +209,7 @@ function renderer.drawPacman(pac, config)
 
     local x = (pac.x) * config.pixelSize
     local y = (pac.y) * config.pixelSize
-    local radius = tileSize - 6
+    local radius = tileSize * .8
     local mouthAngle = math.rad(35)
 
     -- Determine rotation based on direction
