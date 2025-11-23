@@ -269,7 +269,7 @@ function love.update(dt)
     -- Update animation timers
     timer.powerBlink = (timer.powerBlink + dt) % 0.30
     timer.ghostMode = timer.ghostMode + dt
-    if (timer.ghostMode > 7) then
+    if (timer.ghostMode > 15) then
         timer.ghostMode = 0;
         for i, ghost in ipairs(ghosts) do
             if ghost.direction == "left" then ghost.direction = "right"
