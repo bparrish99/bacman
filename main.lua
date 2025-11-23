@@ -7,7 +7,8 @@ local POWER_RADIUS = 5
 local PIXELS_PER_TILE = 8
 local Renderer = require("renderer")
 local Maze = require("maze")
-local timer = { powerBlink = 0 }
+local timer = { powerBlink = 0, ghostMode = 0 }
+local ghostMode = "scatter"
 
 -- Convert pixel coordinates to tile coordinates (1-indexed)
 local function pixelToTile(x, y)
@@ -61,6 +62,7 @@ local ghosts = {
         y = 11.5 * PIXELS_PER_TILE,
         direction = "left",
         speed = .85,
+        scatterX=28,scatterY=1,
         setTarget = function(self, pac)
             -- Example: Blinky targets Pac-Man's current tile
             self.targetX = pac.xTile
@@ -74,6 +76,7 @@ local ghosts = {
         y = 11.5 * PIXELS_PER_TILE,
         direction = "left",
         speed = .70,
+        scatterX=1, scatterY=1,
         setTarget = function(self, pac)
             -- Example: Blinky targets Pac-Man's current tile
             if pac.direction == "left" then
@@ -101,6 +104,8 @@ local ghosts = {
         y = 11.5 * PIXELS_PER_TILE,
         direction = "left",
         speed = .70,
+        scatterX = 28,
+        scatterY = 31,
         setTarget = function(self, pac, ghosts)
             local anchorX, anchorY;
             -- Example: Blinky targets Pac-Man's current tile
@@ -159,6 +164,8 @@ local ghosts = {
                 self.targetY = 31
             end
         end,
+        scatterX = 1,
+        scatterY = 31,
     },
 }
 
@@ -261,9 +268,28 @@ function love.update(dt)
 
     -- Update animation timers
     timer.powerBlink = (timer.powerBlink + dt) % 0.30
+    timer.ghostMode = timer.ghostMode + dt
+    if (timer.ghostMode > 7) then
+        timer.ghostMode = 0;
+        for i, ghost in ipairs(ghosts) do
+            if ghost.direction == "left" then ghost.direction = "right"
+            elseif ghost.direction == "right" then ghost.direction = "left"
+            elseif ghost.direction == "up" then ghost.direction = "down"
+            else ghost.direction = "up"
+            end
+        end
+        if ghostMode == "scatter" then ghostMode = "chase"
+        else ghostMode = "scatter"
+        end
+    end
 
     for i, ghost in ipairs(ghosts) do
-        ghost:setTarget(pac, ghosts)
+        if (ghostMode == "scatter") then
+            ghost.targetX = ghost.scatterX
+            ghost.targetY = ghost.scatterY
+        else
+            ghost:setTarget(pac, ghosts)
+        end
         ghost.xTile, ghost.yTile = pixelToTile(ghost.x, ghost.y);
         if ghost.direction == "left" then
             ghost.x = ghost.x - ghost.speed
