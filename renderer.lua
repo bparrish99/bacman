@@ -192,18 +192,22 @@ function renderer.drawGhosts(ghosts, config)
     local pixelSize = config.pixelSize
 
     for i,ghost in ipairs(ghosts) do
-        if (ghost.mode == "frightened") then
-            love.graphics.setColor(.3,.3,1);
-        else 
-            love.graphics.setColor(ghost.color[1], ghost.color[2], ghost.color[3]);
+        if (ghost.mode ~= "dead") then
+            if (ghost.mode == "frightened") then
+                love.graphics.setColor(.3,.3,1);
+            else 
+                love.graphics.setColor(ghost.color[1], ghost.color[2], ghost.color[3]);
+            end
+            love.graphics.rectangle("fill", ghost.x * pixelSize - (tileSize * .75), ghost.y * pixelSize - (tileSize * .75), tileSize * 1.5, tileSize * 1.5);
         end
-        love.graphics.rectangle("fill", ghost.x * pixelSize - (tileSize * .75), ghost.y * pixelSize - (tileSize * .75), tileSize * 1.5, tileSize * 1.5);
-        love.graphics.setColor(1,1,1);
-        love.graphics.circle("fill", ghost.x * pixelSize - (tileSize / 3), ghost.y * pixelSize - (tileSize / 3), tileSize * .3);
-        love.graphics.circle("fill", ghost.x * pixelSize + (tileSize / 3), ghost.y * pixelSize - (tileSize / 3), tileSize * .3);
-        love.graphics.setColor(0,0,0);
-        love.graphics.circle("fill", ghost.x * pixelSize - (tileSize / 3), ghost.y * pixelSize - (tileSize / 3), tileSize * .15);
-        love.graphics.circle("fill", ghost.x * pixelSize + (tileSize / 3), ghost.y * pixelSize - (tileSize / 3), tileSize * .15);
+        if (gameState.ateGhost ~= ghost.name) then
+            love.graphics.setColor(1,1,1);
+            love.graphics.circle("fill", ghost.x * pixelSize - (tileSize / 3), ghost.y * pixelSize - (tileSize / 3), tileSize * .3);
+            love.graphics.circle("fill", ghost.x * pixelSize + (tileSize / 3), ghost.y * pixelSize - (tileSize / 3), tileSize * .3);
+            love.graphics.setColor(0,0,0);
+            love.graphics.circle("fill", ghost.x * pixelSize - (tileSize / 3), ghost.y * pixelSize - (tileSize / 3), tileSize * .15);
+            love.graphics.circle("fill", ghost.x * pixelSize + (tileSize / 3), ghost.y * pixelSize - (tileSize / 3), tileSize * .15);
+        end
     end
 end
 

@@ -52,7 +52,7 @@ local pac = {
     x = 14 * PIXELS_PER_TILE,
     y = 23.5 * PIXELS_PER_TILE,
     xTile, yTile = pixelToTile(14 * PIXELS_PER_TILE, 23.5 * PIXELS_PER_TILE),
-    speed = .9,
+    speed = 2,
     direction = "left",
     startX = 14 * PIXELS_PER_TILE,
     startY = 23.5 * PIXELS_PER_TILE
@@ -356,6 +356,8 @@ function love.update(dt)
             if (ghost.mode == "scatter") then
                 ghost.targetX = ghost.scatterX
                 ghost.targetY = ghost.scatterY
+            elseif ghost.mode == "dead" then
+                ghost.targetX, ghost.targetY = pixelToTile(ghost.startX, ghost.startY)
             else
                 ghost:setTarget(pac, ghosts)
             end
@@ -395,19 +397,21 @@ function love.update(dt)
             end
             local newXTile, newYTile = pixelToTile(ghost.x, ghost.y)
 
+            local startXTile, startYTile = pixelToTile(ghost.startX, ghost.startY)
+            if ghost.mode == "dead" and newXTile == startXTile and newYTile == startYTile then
+                ghost.mode = "chase"
+            end
+
             -- check for eating or been eaten
             if newXTile == pac.xTile and newYTile == pac.yTile then
                 if ghost.mode == "frightened" then
-                    ghost.x = ghost.startX;
-                    ghost.y = ghost.startY;
                     ghost.direction = "left"
                     gameState.halted = true
-                    gameState.ateGhost = true
-                    ghost.mode = "chase"
+                    gameState.ateGhost = ghost.name
+                    ghost.mode = "dead"
                     timer.ateGhost = 1
                     
-                    
-                else -- ate pacman
+                elseif ghost.mode ~= "dead" then -- ate pacman
                     gameState.halted = true
                     timer.restart = 2
                 end
@@ -447,7 +451,7 @@ function love.update(dt)
                     end
                 end
     
-                if (ghost.mode == "chase" or ghost.mode == "scatter") then
+                if (ghost.mode == "chase" or ghost.mode == "scatter" or ghost.mode == "dead") then
                     local closest
                     local closestDist = math.huge
                     for _, cand in ipairs(candidates) do
