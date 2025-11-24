@@ -1,5 +1,5 @@
 local DEBUG=false
-local PIXEL_SIZE=3
+local PIXEL_SIZE=4
 local TILE_SIZE = PIXEL_SIZE * 8
 local WALL_PADDING = 1
 local PELLET_RADIUS = 2
@@ -7,8 +7,8 @@ local POWER_RADIUS = 5
 local PIXELS_PER_TILE = 8
 local Renderer = require("renderer")
 local Maze = require("maze")
-local timer = { powerBlink = 0, ghostMode = 0 }
 
+timer = { powerBlink = 0, ghostMode = 0, t = 0 }
 gameState = {
     halted = false
 }
@@ -52,7 +52,7 @@ local pac = {
     x = 14 * PIXELS_PER_TILE,
     y = 23.5 * PIXELS_PER_TILE,
     xTile, yTile = pixelToTile(14 * PIXELS_PER_TILE, 23.5 * PIXELS_PER_TILE),
-    speed = 2,
+    speed = 1,
     direction = "left",
     startX = 14 * PIXELS_PER_TILE,
     startY = 23.5 * PIXELS_PER_TILE
@@ -193,7 +193,7 @@ function love.load()
     love.window.setTitle("Pinbac-Man")
     love.window.setMode(windowWidth, windowHeight, {resizable = false})
     love.graphics.setBackgroundColor(colors.background)
-    timer.startup = 10
+    timer.startup = 2
     gameState.halted = true
 end
 
@@ -208,6 +208,7 @@ function love.keyreleased(key)
 end
 
 function love.update(dt)
+    timer.t = timer.t + dt
     if gameState.halted then
         if (timer.restart and timer.restart > 0) then
             timer.restart = timer.restart - dt
@@ -279,7 +280,7 @@ function love.update(dt)
                     end
                 end
                 if ghost.mode == "chase" or ghost.mode == "frightened" then ghost.mode = "scatter"
-                elseif ghost.mode == "scattered" then ghost.mode = "chase"
+                elseif ghost.mode == "scatter" then ghost.mode = "chase"
                 end
             end
         end
@@ -446,28 +447,28 @@ function love.update(dt)
             if pressedKeys["left"] then
                 if (pac.direction == "right") then
                     pac.direction = "left"
-                elseif (pac.y % PIXELS_PER_TILE > (PIXELS_PER_TILE / 2 - pac.speed / 2) and pac.y % PIXELS_PER_TILE < (PIXELS_PER_TILE / 2 + pac.speed /2) and maze[pac.yTile][pac.xTile-1] == 1) then
+                elseif (pac.y % PIXELS_PER_TILE > (PIXELS_PER_TILE / 2 - pac.speed / 1) and pac.y % PIXELS_PER_TILE < (PIXELS_PER_TILE / 2 + pac.speed /1) and maze[pac.yTile][pac.xTile-1] == 1) then
                     pac.direction = "left"
                     pac.y = pac.yTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2)
                 end
             elseif pressedKeys["right"] then
                 if (pac.direction == "left") then
                     pac.direction = "right"
-                elseif (pac.y % PIXELS_PER_TILE > (PIXELS_PER_TILE / 2 - pac.speed / 2) and pac.y % PIXELS_PER_TILE < (PIXELS_PER_TILE / 2 + pac.speed /2) and maze[pac.yTile][pac.xTile+1] == 1) then
+                elseif (pac.y % PIXELS_PER_TILE > (PIXELS_PER_TILE / 2 - pac.speed / 1) and pac.y % PIXELS_PER_TILE < (PIXELS_PER_TILE / 2 + pac.speed /1) and maze[pac.yTile][pac.xTile+1] == 1) then
                     pac.direction = "right"
                     pac.y = pac.yTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2)
                 end
             elseif pressedKeys["up"] then
                 if (pac.direction == "down") then
                     pac.direction = "up"
-                elseif (pac.x % PIXELS_PER_TILE > (PIXELS_PER_TILE / 2 - pac.speed / 2) and pac.x % PIXELS_PER_TILE < (PIXELS_PER_TILE / 2 + pac.speed /2) and maze[pac.yTile-1][pac.xTile] == 1) then
+                elseif (pac.x % PIXELS_PER_TILE > (PIXELS_PER_TILE / 2 - pac.speed / 1) and pac.x % PIXELS_PER_TILE < (PIXELS_PER_TILE / 2 + pac.speed /1) and maze[pac.yTile-1][pac.xTile] == 1) then
                     pac.direction = "up"
                     pac.x = pac.xTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2)
                 end
             elseif pressedKeys["down"] then
                 if (pac.direction == "up") then
                     pac.direction = "down"
-                elseif (pac.x % PIXELS_PER_TILE > (PIXELS_PER_TILE / 2 - pac.speed / 2) and pac.x % PIXELS_PER_TILE < (PIXELS_PER_TILE / 2 + pac.speed /2) and maze[pac.yTile+1][pac.xTile] == 1) then
+                elseif (pac.x % PIXELS_PER_TILE > (PIXELS_PER_TILE / 2 - pac.speed / 1) and pac.x % PIXELS_PER_TILE < (PIXELS_PER_TILE / 2 + pac.speed /1) and maze[pac.yTile+1][pac.xTile] == 1) then
                     pac.direction = "down"
                     pac.x = pac.xTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2)
                 end
@@ -531,19 +532,17 @@ function love.draw()
         end
         for i, ghost in ipairs(ghosts) do
             love.graphics.setColor(ghost.color[1], ghost.color[2], ghost.color[3], .5);
-            love.graphics.rectangle("fill", (ghost.targetX - 1) * TILE_SIZE, (ghost.targetY - 1) * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            --love.graphics.rectangle("fill", (ghost.targetX - 1) * TILE_SIZE, (ghost.targetY - 1) * TILE_SIZE, TILE_SIZE, TILE_SIZE);
             love.graphics.setColor(1,1,1);
             love.graphics.print(ghost.name, 10, i*150)
             love.graphics.print('x/y: ' .. ghost.x .. "/" .. ghost.y, 10, i*150 + 15)
-            love.graphics.print('xTile/yTile: ' .. ghost.xTile .. "/" .. ghost.yTile, 10, i*150 + 30)
-            love.graphics.print('targetX/targetY: ' .. ghost.targetX .. "/" .. ghost.targetY, 10, i*150 + 45)
+            --love.graphics.print('xTile/yTile: ' .. ghost.xTile .. "/" .. ghost.yTile, 10, i*150 + 30)
+            --love.graphics.print('targetX/targetY: ' .. ghost.targetX .. "/" .. ghost.targetY, 10, i*150 + 45)
             love.graphics.print('direction: ' .. ghost.direction, 10, i*150 + 60)
             if(ghost.nextDir) then
                 love.graphics.print('nextDir: ' .. ghost.nextDir, 10, i*150 + 75)
             end
-            if(ghost.latestCandidateCount) then
-                love.graphics.print('latestCandidateCount: ' .. ghost.latestCandidateCount, 10, i*150 + 90)
-            end
+            love.graphics.print('mode: ' .. ghost.mode, 10, i*150 + 90)
             if(ghost.report) then
                 love.graphics.print('Report: ' .. ghost.report, 10, i*150 + 105)
             end

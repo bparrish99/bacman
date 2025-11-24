@@ -215,10 +215,12 @@ function renderer.drawPacman(pac, config)
     local tileSize = config.tileSize
     local colors = config.colors
 
+    -- Get a random number between 0 and 50
     local x = (pac.x) * config.pixelSize
     local y = (pac.y) * config.pixelSize
     local radius = tileSize * .8
-    local mouthAngle = math.rad(35)
+    local mouthAngle = math.abs(math.rad((timer.t % .15) * 600) -.50)
+    print(mouthAngle)
 
     -- Determine rotation based on direction
     local direction = pac.direction or "left"
