@@ -187,12 +187,16 @@ function renderer.drawMaze(maze, config)
     end
 end
 
-function renderer.drawGhosts(ghosts, config)
+function renderer.drawGhosts(ghosts, config, ghostMode)
     local tileSize = config.tileSize
     local pixelSize = config.pixelSize
 
     for i,ghost in ipairs(ghosts) do
-        love.graphics.setColor(ghost.color[1], ghost.color[2], ghost.color[3]);
+        if (ghostMode == "frightened") then
+            love.graphics.setColor(.3,.3,1);
+        else 
+            love.graphics.setColor(ghost.color[1], ghost.color[2], ghost.color[3]);
+        end
         love.graphics.rectangle("fill", ghost.x * pixelSize - (tileSize * .75), ghost.y * pixelSize - (tileSize * .75), tileSize * 1.5, tileSize * 1.5);
         love.graphics.setColor(1,1,1);
         love.graphics.circle("fill", ghost.x * pixelSize - (tileSize / 3), ghost.y * pixelSize - (tileSize / 3), tileSize * .3);

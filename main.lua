@@ -1,5 +1,5 @@
 local DEBUG=false
-local PIXEL_SIZE= 4
+local PIXEL_SIZE= 3
 local TILE_SIZE = PIXEL_SIZE * 8
 local WALL_PADDING = 1
 local PELLET_RADIUS = 2
@@ -50,7 +50,7 @@ local pac = {
     x = 14 * PIXELS_PER_TILE,
     y = 23.5 * PIXELS_PER_TILE,
     xTile, yTile = pixelToTile(14 * PIXELS_PER_TILE, 23.5 * PIXELS_PER_TILE),
-    speed = 1,
+    speed = .9,
     direction = "none",
 }
 
@@ -75,7 +75,7 @@ local ghosts = {
         x = 12 * PIXELS_PER_TILE,
         y = 11.5 * PIXELS_PER_TILE,
         direction = "left",
-        speed = .70,
+        speed = .85,
         scatterX=1, scatterY=1,
         setTarget = function(self, pac)
             -- Example: Blinky targets Pac-Man's current tile
@@ -103,7 +103,7 @@ local ghosts = {
         x = 16 * PIXELS_PER_TILE,
         y = 11.5 * PIXELS_PER_TILE,
         direction = "left",
-        speed = .70,
+        speed = .85,
         scatterX = 28,
         scatterY = 31,
         setTarget = function(self, pac, ghosts)
@@ -148,7 +148,7 @@ local ghosts = {
         x = 18 * PIXELS_PER_TILE,
         y = 11.5 * PIXELS_PER_TILE,
         direction = "left",
-        speed = .70,
+        speed = .85,
         setTarget = function(self, pac)
             -- Note: self.xTile/yTile are not updated during movement, 
             --   use pixelToTile(self.x, self.y) to get Clyde's current tile position.
@@ -206,6 +206,15 @@ function love.update(dt)
             if powerPellet[1] == pacXTile and powerPellet[2] == pacYTile then
                 table.remove(powerPellets, i);
                 dotEaten = true;
+                ghostMode = "frightened"
+                for i, ghost in ipairs(ghosts) do
+                    if ghost.direction == "left" then ghost.direction = "right"
+                    elseif ghost.direction == "right" then ghost.direction = "left"
+                    elseif ghost.direction == "up" then ghost.direction = "down"
+                    else ghost.direction = "up"
+                    end
+                end
+                timer.ghostMode = 1 -- right now, this should force 8 seconds, refactor
             end
         end
     end
@@ -248,20 +257,32 @@ function love.update(dt)
         end
 
         if pressedKeys["left"] then
-            if (pac.direction == "right" or (pac.y % PIXELS_PER_TILE == PIXELS_PER_TILE / 2 and maze[pac.yTile][pac.xTile-1] == 1)) then
+            if (pac.direction == "right") then
                 pac.direction = "left"
+            elseif (pac.y % PIXELS_PER_TILE > (PIXELS_PER_TILE / 2 - pac.speed / 2) and pac.y % PIXELS_PER_TILE < (PIXELS_PER_TILE / 2 + pac.speed /2) and maze[pac.yTile][pac.xTile-1] == 1) then
+                pac.direction = "left"
+                pac.y = pac.yTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2)
             end
         elseif pressedKeys["right"] then
-            if (pac.direction == "left" or (pac.y % PIXELS_PER_TILE == PIXELS_PER_TILE / 2 and maze[pac.yTile][pac.xTile+1] == 1)) then
+            if (pac.direction == "left") then
                 pac.direction = "right"
+            elseif (pac.y % PIXELS_PER_TILE > (PIXELS_PER_TILE / 2 - pac.speed / 2) and pac.y % PIXELS_PER_TILE < (PIXELS_PER_TILE / 2 + pac.speed /2) and maze[pac.yTile][pac.xTile+1] == 1) then
+                pac.direction = "right"
+                pac.y = pac.yTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2)
             end
         elseif pressedKeys["up"] then
-            if (pac.direction == "down" or (pac.x % PIXELS_PER_TILE == PIXELS_PER_TILE / 2 and maze[pac.yTile - 1][pac.xTile] == 1)) then
+            if (pac.direction == "down") then
                 pac.direction = "up"
+            elseif (pac.x % PIXELS_PER_TILE > (PIXELS_PER_TILE / 2 - pac.speed / 2) and pac.x % PIXELS_PER_TILE < (PIXELS_PER_TILE / 2 + pac.speed /2) and maze[pac.yTile-1][pac.xTile] == 1) then
+                pac.direction = "up"
+                pac.x = pac.xTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2)
             end
         elseif pressedKeys["down"] then
-            if (pac.direction == "up" or (pac.x % PIXELS_PER_TILE == PIXELS_PER_TILE / 2 and maze[pac.yTile + 1][pac.xTile] == 1)) then
+            if (pac.direction == "up") then
                 pac.direction = "down"
+            elseif (pac.x % PIXELS_PER_TILE > (PIXELS_PER_TILE / 2 - pac.speed / 2) and pac.x % PIXELS_PER_TILE < (PIXELS_PER_TILE / 2 + pac.speed /2) and maze[pac.yTile+1][pac.xTile] == 1) then
+                pac.direction = "down"
+                pac.x = pac.xTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2)
             end
         end
     end
@@ -269,17 +290,20 @@ function love.update(dt)
     -- Update animation timers
     timer.powerBlink = (timer.powerBlink + dt) % 0.30
     timer.ghostMode = timer.ghostMode + dt
-    if (timer.ghostMode > 15) then
+
+    if (timer.ghostMode > 9) then
         timer.ghostMode = 0;
-        for i, ghost in ipairs(ghosts) do
-            if ghost.direction == "left" then ghost.direction = "right"
-            elseif ghost.direction == "right" then ghost.direction = "left"
-            elseif ghost.direction == "up" then ghost.direction = "down"
-            else ghost.direction = "up"
+        if (ghostMode ~= "frightened") then
+            for i, ghost in ipairs(ghosts) do
+                if ghost.direction == "left" then ghost.direction = "right"
+                elseif ghost.direction == "right" then ghost.direction = "left"
+                elseif ghost.direction == "up" then ghost.direction = "down"
+                else ghost.direction = "up"
+                end
             end
         end
-        if ghostMode == "scatter" then ghostMode = "chase"
-        else ghostMode = "scatter"
+        if ghostMode == "chase" or ghostMode == "frightened" then ghostMode = "scatter"
+        else ghostMode = "chase"
         end
     end
 
@@ -342,32 +366,43 @@ function love.update(dt)
                 candidates[#candidates + 1] = {ghost.xTile+1, ghost.yTile}
             end
             ghost.latestCandidateCount = #candidates
-            local closest
-            local closestDist = math.huge
-            for _, cand in ipairs(candidates) do
-                local dx = cand[1] - ghost.targetX
-                local dy = cand[2] - ghost.targetY
-                local dist = dx * dx + dy * dy -- distance squared for efficiency
-                if dist < closestDist then
-                    closestDist = dist
-                    closest = cand
+            
+            local function setDirection(from, to, prefix)
+                local dir, msg
+                if to[1] < from.xTile then
+                    dir, msg = "left", "went left"
+                elseif to[1] > from.xTile then
+                    dir, msg = "right", "went right"
+                elseif to[2] < from.yTile then
+                    dir, msg = "up", "went up"
+                elseif to[2] > from.yTile then
+                    dir, msg = "down", "went down"
+                end
+                if dir then
+                    from.report = "Entered tile "..newXTile.."/"..newYTile..", " .. prefix .. msg
+                    from.nextDir = dir
                 end
             end
 
-            if closest then
-                if closest[1] < ghost.xTile then
-                    ghost.report = "Entered tile "..newXTile.."/"..newYTile..", decided to go left"
-                    ghost.nextDir = "left"
-                elseif closest[1] > ghost.xTile then
-                    ghost.report = "Entered tile "..newXTile.."/"..newYTile..", decided to go right"
-                    ghost.nextDir = "right"
-                elseif closest[2] < ghost.yTile then
-                    ghost.report = "Entered tile "..newXTile.."/"..newYTile..", decided to go up"
-                    ghost.nextDir = "up"
-                elseif closest[2] > ghost.yTile then
-                    ghost.report = "Entered tile "..newXTile.."/"..newYTile..", decided to go down"
-                    ghost.nextDir = "down"
+            if (ghostMode == "chase" or ghostMode == "scatter") then
+                local closest
+                local closestDist = math.huge
+                for _, cand in ipairs(candidates) do
+                    local dx = cand[1] - ghost.targetX
+                    local dy = cand[2] - ghost.targetY
+                    local dist = dx * dx + dy * dy -- distance squared for efficiency
+                    if dist < closestDist then
+                        closestDist = dist
+                        closest = cand
+                    end
                 end
+                if closest then
+                    setDirection(ghost, closest, "decided to ")
+                end
+            elseif ghostMode == "frightened" then
+                local idx = math.random(1, #candidates)
+                local chosen = candidates[idx]
+                setDirection(ghost, chosen, "randomly ")
             end
         end
 
@@ -405,7 +440,7 @@ function love.draw()
     end
 
     Renderer.drawPacman(pac, renderConfig)
-    Renderer.drawGhosts(ghosts, renderConfig);
+    Renderer.drawGhosts(ghosts, renderConfig, ghostMode);
 
 
 
