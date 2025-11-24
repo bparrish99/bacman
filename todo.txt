@@ -1,18 +1,33 @@
-1. add blinky, targeting/movement logic, detect collision
+- no double-chomps
 
-2. add pinky with different targeting
-3. add the other two
+THEN
+ - scatter/chase/frightened timings
+ - blinking frightened
 
-4. power pellets
 
-5. round completion/reset
 
-6. fruit
 
-7. ghost house stuff
 
-8. tunnels
 
-9.  scoring
+pac-man cornering logic
 
-10. basic sounds
+round completion/reset/basic scoring
+
+-- CLEANUP --
+
+fruit
+
+ghost house stuff
+
+tunnels
+
+scoring
+
+basic sounds
+
+
+GHOST logic
+-----------
+If entering new tile, pick next tile, assign to "nextTileX/nextTileY"
+
+Each frame, check if in the center of tile (fuzzy, perhaps).  If so, change direction toward nextTile 

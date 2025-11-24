@@ -193,7 +193,7 @@ function love.load()
     love.window.setTitle("Pinbac-Man")
     love.window.setMode(windowWidth, windowHeight, {resizable = false})
     love.graphics.setBackgroundColor(colors.background)
-    timer.startup = 2
+    timer.startup = 10
     gameState.halted = true
 end
 
@@ -268,78 +268,10 @@ function love.update(dt)
             end
         end
 
-        if (not dotEaten) then
-            if (pac.direction == "left") then
-                pac.x = pac.x - pac.speed;
-                if (maze[pac.yTile][pac.xTile - 1] ~= 1) then
-                    if (pac.x % PIXELS_PER_TILE <= PIXELS_PER_TILE / 2) then 
-                        pac.x = pac.xTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
-                    end
-                end             
-            end
-        
-            if (pac.direction == "right") then
-                pac.x = pac.x + pac.speed;
-                if (maze[pac.yTile][pac.xTile + 1] ~= 1) then
-                    if (pac.x % PIXELS_PER_TILE >= PIXELS_PER_TILE / 2) then 
-                        pac.x = pac.xTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
-                    end
-                end             
-            end
-
-            if (pac.direction == "up") then
-                pac.y = pac.y - pac.speed;
-                if (maze[pac.yTile - 1][pac.xTile] ~= 1) then
-                    if (pac.y % PIXELS_PER_TILE <= PIXELS_PER_TILE / 2) then 
-                        pac.y = pac.yTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
-                    end
-                end             
-            end
-
-            if (pac.direction == "down") then
-                pac.y = pac.y + pac.speed;
-                if (maze[pac.yTile + 1][pac.xTile] ~= 1) then
-                    if (pac.y % PIXELS_PER_TILE >= PIXELS_PER_TILE / 2) then 
-                        pac.y = pac.yTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
-                    end
-                end             
-            end
-
-            if pressedKeys["left"] then
-                if (pac.direction == "right") then
-                    pac.direction = "left"
-                elseif (pac.y % PIXELS_PER_TILE > (PIXELS_PER_TILE / 2 - pac.speed / 2) and pac.y % PIXELS_PER_TILE < (PIXELS_PER_TILE / 2 + pac.speed /2) and maze[pac.yTile][pac.xTile-1] == 1) then
-                    pac.direction = "left"
-                    pac.y = pac.yTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2)
-                end
-            elseif pressedKeys["right"] then
-                if (pac.direction == "left") then
-                    pac.direction = "right"
-                elseif (pac.y % PIXELS_PER_TILE > (PIXELS_PER_TILE / 2 - pac.speed / 2) and pac.y % PIXELS_PER_TILE < (PIXELS_PER_TILE / 2 + pac.speed /2) and maze[pac.yTile][pac.xTile+1] == 1) then
-                    pac.direction = "right"
-                    pac.y = pac.yTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2)
-                end
-            elseif pressedKeys["up"] then
-                if (pac.direction == "down") then
-                    pac.direction = "up"
-                elseif (pac.x % PIXELS_PER_TILE > (PIXELS_PER_TILE / 2 - pac.speed / 2) and pac.x % PIXELS_PER_TILE < (PIXELS_PER_TILE / 2 + pac.speed /2) and maze[pac.yTile-1][pac.xTile] == 1) then
-                    pac.direction = "up"
-                    pac.x = pac.xTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2)
-                end
-            elseif pressedKeys["down"] then
-                if (pac.direction == "up") then
-                    pac.direction = "down"
-                elseif (pac.x % PIXELS_PER_TILE > (PIXELS_PER_TILE / 2 - pac.speed / 2) and pac.x % PIXELS_PER_TILE < (PIXELS_PER_TILE / 2 + pac.speed /2) and maze[pac.yTile+1][pac.xTile] == 1) then
-                    pac.direction = "down"
-                    pac.x = pac.xTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2)
-                end
-            end
-        end
-
         if (timer.ghostMode > 9) then
             timer.ghostMode = 0;
             for i, ghost in ipairs(ghosts) do
-                if (ghost.mode ~= "frightened") then
+                if (ghost.mode ~= "frightened" and ghost.mode ~= "dead") then
                     if ghost.direction == "left" then ghost.direction = "right"
                     elseif ghost.direction == "right" then ghost.direction = "left"
                     elseif ghost.direction == "up" then ghost.direction = "down"
@@ -347,7 +279,7 @@ function love.update(dt)
                     end
                 end
                 if ghost.mode == "chase" or ghost.mode == "frightened" then ghost.mode = "scatter"
-                else ghost.mode = "chase"
+                elseif ghost.mode == "scattered" then ghost.mode = "chase"
                 end
             end
         end
@@ -404,7 +336,7 @@ function love.update(dt)
 
             -- check for eating or been eaten
             if newXTile == pac.xTile and newYTile == pac.yTile then
-                if ghost.mode == "frightened" then
+                if ghost.mode == "frightened" and not gameState.ateGhost then
                     ghost.direction = "left"
                     gameState.halted = true
                     gameState.ateGhost = ghost.name
@@ -473,6 +405,76 @@ function love.update(dt)
                 end
             end
         end
+        
+        if (not dotEaten) then
+            if (pac.direction == "left") then
+                pac.x = pac.x - pac.speed;
+                if (maze[pac.yTile][pac.xTile - 1] ~= 1) then
+                    if (pac.x % PIXELS_PER_TILE <= PIXELS_PER_TILE / 2) then 
+                        pac.x = pac.xTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
+                    end
+                end             
+            end
+        
+            if (pac.direction == "right") then
+                pac.x = pac.x + pac.speed;
+                if (maze[pac.yTile][pac.xTile + 1] ~= 1) then
+                    if (pac.x % PIXELS_PER_TILE >= PIXELS_PER_TILE / 2) then 
+                        pac.x = pac.xTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
+                    end
+                end             
+            end
+
+            if (pac.direction == "up") then
+                pac.y = pac.y - pac.speed;
+                if (maze[pac.yTile - 1][pac.xTile] ~= 1) then
+                    if (pac.y % PIXELS_PER_TILE <= PIXELS_PER_TILE / 2) then 
+                        pac.y = pac.yTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
+                    end
+                end             
+            end
+
+            if (pac.direction == "down") then
+                pac.y = pac.y + pac.speed;
+                if (maze[pac.yTile + 1][pac.xTile] ~= 1) then
+                    if (pac.y % PIXELS_PER_TILE >= PIXELS_PER_TILE / 2) then 
+                        pac.y = pac.yTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
+                    end
+                end             
+            end
+
+            if pressedKeys["left"] then
+                if (pac.direction == "right") then
+                    pac.direction = "left"
+                elseif (pac.y % PIXELS_PER_TILE > (PIXELS_PER_TILE / 2 - pac.speed / 2) and pac.y % PIXELS_PER_TILE < (PIXELS_PER_TILE / 2 + pac.speed /2) and maze[pac.yTile][pac.xTile-1] == 1) then
+                    pac.direction = "left"
+                    pac.y = pac.yTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2)
+                end
+            elseif pressedKeys["right"] then
+                if (pac.direction == "left") then
+                    pac.direction = "right"
+                elseif (pac.y % PIXELS_PER_TILE > (PIXELS_PER_TILE / 2 - pac.speed / 2) and pac.y % PIXELS_PER_TILE < (PIXELS_PER_TILE / 2 + pac.speed /2) and maze[pac.yTile][pac.xTile+1] == 1) then
+                    pac.direction = "right"
+                    pac.y = pac.yTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2)
+                end
+            elseif pressedKeys["up"] then
+                if (pac.direction == "down") then
+                    pac.direction = "up"
+                elseif (pac.x % PIXELS_PER_TILE > (PIXELS_PER_TILE / 2 - pac.speed / 2) and pac.x % PIXELS_PER_TILE < (PIXELS_PER_TILE / 2 + pac.speed /2) and maze[pac.yTile-1][pac.xTile] == 1) then
+                    pac.direction = "up"
+                    pac.x = pac.xTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2)
+                end
+            elseif pressedKeys["down"] then
+                if (pac.direction == "up") then
+                    pac.direction = "down"
+                elseif (pac.x % PIXELS_PER_TILE > (PIXELS_PER_TILE / 2 - pac.speed / 2) and pac.x % PIXELS_PER_TILE < (PIXELS_PER_TILE / 2 + pac.speed /2) and maze[pac.yTile+1][pac.xTile] == 1) then
+                    pac.direction = "down"
+                    pac.x = pac.xTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2)
+                end
+            end
+        end
+
+
         timer.ghostMode = timer.ghostMode + dt
     end
     -- Update animation timers
