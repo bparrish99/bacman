@@ -1,5 +1,5 @@
 local DEBUG=false
-local PIXEL_SIZE= 3
+local PIXEL_SIZE=3
 local TILE_SIZE = PIXEL_SIZE * 8
 local WALL_PADDING = 1
 local PELLET_RADIUS = 2
@@ -8,8 +8,10 @@ local PIXELS_PER_TILE = 8
 local Renderer = require("renderer")
 local Maze = require("maze")
 local timer = { powerBlink = 0, ghostMode = 0 }
-local ghostMode = "scatter"
 
+gameState = {
+    halted = false
+}
 -- Convert pixel coordinates to tile coordinates (1-indexed)
 local function pixelToTile(x, y)
     local col = math.floor(x / PIXELS_PER_TILE) + 1
@@ -51,7 +53,9 @@ local pac = {
     y = 23.5 * PIXELS_PER_TILE,
     xTile, yTile = pixelToTile(14 * PIXELS_PER_TILE, 23.5 * PIXELS_PER_TILE),
     speed = .9,
-    direction = "none",
+    direction = "left",
+    startX = 14 * PIXELS_PER_TILE,
+    startY = 23.5 * PIXELS_PER_TILE
 }
 
 local ghosts = {
@@ -60,7 +64,10 @@ local ghosts = {
         color = { 1, 0, 0 },
         x = 14 * PIXELS_PER_TILE,
         y = 11.5 * PIXELS_PER_TILE,
+        startX = 14 * PIXELS_PER_TILE,
+        startY = 11.5 * PIXELS_PER_TILE,
         direction = "left",
+        mode = "scatter",
         speed = .85,
         scatterX=28,scatterY=1,
         setTarget = function(self, pac)
@@ -74,7 +81,10 @@ local ghosts = {
         color = { 1, .7, 1 },
         x = 12 * PIXELS_PER_TILE,
         y = 11.5 * PIXELS_PER_TILE,
+        startX = 12 * PIXELS_PER_TILE,
+        startY = 11.5 * PIXELS_PER_TILE,
         direction = "left",
+        mode = "scatter",
         speed = .85,
         scatterX=1, scatterY=1,
         setTarget = function(self, pac)
@@ -102,7 +112,10 @@ local ghosts = {
         color = { .5, .7, 1 },
         x = 16 * PIXELS_PER_TILE,
         y = 11.5 * PIXELS_PER_TILE,
+        startX = 16 * PIXELS_PER_TILE,
+        startY = 11.5 * PIXELS_PER_TILE,
         direction = "left",
+        mode = "scatter",
         speed = .85,
         scatterX = 28,
         scatterY = 31,
@@ -147,7 +160,10 @@ local ghosts = {
         color = { 1, .5, .2 },
         x = 18 * PIXELS_PER_TILE,
         y = 11.5 * PIXELS_PER_TILE,
+        startX = 18 * PIXELS_PER_TILE,
+        startY = 11.5 * PIXELS_PER_TILE,
         direction = "left",
+        mode = "scatter",
         speed = .85,
         setTarget = function(self, pac)
             -- Note: self.xTile/yTile are not updated during movement, 
@@ -177,6 +193,8 @@ function love.load()
     love.window.setTitle("Pinbac-Man")
     love.window.setMode(windowWidth, windowHeight, {resizable = false})
     love.graphics.setBackgroundColor(colors.background)
+    timer.startup = 2
+    gameState.halted = true
 end
 
 local pressedKeys = {}
@@ -190,223 +208,272 @@ function love.keyreleased(key)
 end
 
 function love.update(dt)
-    -- animation or future logic hooks could go here
-    local dotEaten = false;
-    pacXTile, pacYTile = pixelToTile(pac.x, pac.y);
-    if (pacXTile ~= pac.xTile or pacYTile ~= pac.yTile) then -- pac-man in new tile
-        pac.xTile = pacXTile;
-        pac.yTile = pacYTile;
-        for i, dot in ipairs(dots) do
-            if dot[1] == pacXTile and dot[2] == pacYTile then
-                table.remove(dots, i);
-                dotEaten = true;
+    if gameState.halted then
+        if (timer.restart and timer.restart > 0) then
+            timer.restart = timer.restart - dt
+            if timer.restart <= 0 then
+                pac.x = pac.startX
+                pac.y = pac.startY
+                pac.direction = "left"
+                for i, ghost in ipairs(ghosts) do
+                    ghost.x = ghost.startX
+                    ghost.y = ghost.startY
+                    ghost.direction = "left"
+                end
+                timer.startup = 2
+                for i, ghost in ipairs(ghosts) do
+                    ghost.mode = "scatter"
+                end
+                timer.ghostMode = 0
             end
         end
-        for i, powerPellet in ipairs(powerPellets) do
-            if powerPellet[1] == pacXTile and powerPellet[2] == pacYTile then
-                table.remove(powerPellets, i);
-                dotEaten = true;
-                ghostMode = "frightened"
-                for i, ghost in ipairs(ghosts) do
+        if (timer.startup and timer.startup > 0) then
+            timer.startup = timer.startup - dt
+            if timer.startup <= 0 then gameState.halted = false end
+        end
+        if (timer.ateGhost and timer.ateGhost > 0) then
+            timer.ateGhost = timer.ateGhost - dt
+            if timer.ateGhost <=0 then 
+                gameState.halted = false
+                gameState.ateGhost = false
+            end
+        end
+    else
+        -- animation or future logic hooks could go here
+        local dotEaten = false;
+        pacXTile, pacYTile = pixelToTile(pac.x, pac.y);
+        if (pacXTile ~= pac.xTile or pacYTile ~= pac.yTile) then -- pac-man in new tile
+            pac.xTile = pacXTile;
+            pac.yTile = pacYTile;
+            for i, dot in ipairs(dots) do
+                if dot[1] == pacXTile and dot[2] == pacYTile then
+                    table.remove(dots, i);
+                    dotEaten = true;
+                end
+            end
+            for i, powerPellet in ipairs(powerPellets) do
+                if powerPellet[1] == pacXTile and powerPellet[2] == pacYTile then
+                    table.remove(powerPellets, i);
+                    dotEaten = true;
+                    for i, ghost in ipairs(ghosts) do
+                        ghost.mode = "frightened"
+                        if ghost.direction == "left" then ghost.direction = "right"
+                        elseif ghost.direction == "right" then ghost.direction = "left"
+                        elseif ghost.direction == "up" then ghost.direction = "down"
+                        else ghost.direction = "up"
+                        end
+                    end
+                    timer.ghostMode = 1 -- right now, this should force 8 seconds, refactor
+                end
+            end
+        end
+
+        if (not dotEaten) then
+            if (pac.direction == "left") then
+                pac.x = pac.x - pac.speed;
+                if (maze[pac.yTile][pac.xTile - 1] ~= 1) then
+                    if (pac.x % PIXELS_PER_TILE <= PIXELS_PER_TILE / 2) then 
+                        pac.x = pac.xTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
+                    end
+                end             
+            end
+        
+            if (pac.direction == "right") then
+                pac.x = pac.x + pac.speed;
+                if (maze[pac.yTile][pac.xTile + 1] ~= 1) then
+                    if (pac.x % PIXELS_PER_TILE >= PIXELS_PER_TILE / 2) then 
+                        pac.x = pac.xTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
+                    end
+                end             
+            end
+
+            if (pac.direction == "up") then
+                pac.y = pac.y - pac.speed;
+                if (maze[pac.yTile - 1][pac.xTile] ~= 1) then
+                    if (pac.y % PIXELS_PER_TILE <= PIXELS_PER_TILE / 2) then 
+                        pac.y = pac.yTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
+                    end
+                end             
+            end
+
+            if (pac.direction == "down") then
+                pac.y = pac.y + pac.speed;
+                if (maze[pac.yTile + 1][pac.xTile] ~= 1) then
+                    if (pac.y % PIXELS_PER_TILE >= PIXELS_PER_TILE / 2) then 
+                        pac.y = pac.yTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
+                    end
+                end             
+            end
+
+            if pressedKeys["left"] then
+                if (pac.direction == "right") then
+                    pac.direction = "left"
+                elseif (pac.y % PIXELS_PER_TILE > (PIXELS_PER_TILE / 2 - pac.speed / 2) and pac.y % PIXELS_PER_TILE < (PIXELS_PER_TILE / 2 + pac.speed /2) and maze[pac.yTile][pac.xTile-1] == 1) then
+                    pac.direction = "left"
+                    pac.y = pac.yTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2)
+                end
+            elseif pressedKeys["right"] then
+                if (pac.direction == "left") then
+                    pac.direction = "right"
+                elseif (pac.y % PIXELS_PER_TILE > (PIXELS_PER_TILE / 2 - pac.speed / 2) and pac.y % PIXELS_PER_TILE < (PIXELS_PER_TILE / 2 + pac.speed /2) and maze[pac.yTile][pac.xTile+1] == 1) then
+                    pac.direction = "right"
+                    pac.y = pac.yTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2)
+                end
+            elseif pressedKeys["up"] then
+                if (pac.direction == "down") then
+                    pac.direction = "up"
+                elseif (pac.x % PIXELS_PER_TILE > (PIXELS_PER_TILE / 2 - pac.speed / 2) and pac.x % PIXELS_PER_TILE < (PIXELS_PER_TILE / 2 + pac.speed /2) and maze[pac.yTile-1][pac.xTile] == 1) then
+                    pac.direction = "up"
+                    pac.x = pac.xTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2)
+                end
+            elseif pressedKeys["down"] then
+                if (pac.direction == "up") then
+                    pac.direction = "down"
+                elseif (pac.x % PIXELS_PER_TILE > (PIXELS_PER_TILE / 2 - pac.speed / 2) and pac.x % PIXELS_PER_TILE < (PIXELS_PER_TILE / 2 + pac.speed /2) and maze[pac.yTile+1][pac.xTile] == 1) then
+                    pac.direction = "down"
+                    pac.x = pac.xTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2)
+                end
+            end
+        end
+
+        if (timer.ghostMode > 9) then
+            timer.ghostMode = 0;
+            for i, ghost in ipairs(ghosts) do
+                if (ghost.mode ~= "frightened") then
                     if ghost.direction == "left" then ghost.direction = "right"
                     elseif ghost.direction == "right" then ghost.direction = "left"
                     elseif ghost.direction == "up" then ghost.direction = "down"
                     else ghost.direction = "up"
                     end
                 end
-                timer.ghostMode = 1 -- right now, this should force 8 seconds, refactor
-            end
-        end
-    end
-
-    if (not dotEaten) then
-        if (pac.direction == "left") then
-            pac.x = pac.x - pac.speed;
-            if (maze[pac.yTile][pac.xTile - 1] ~= 1) then
-                if (pac.x % PIXELS_PER_TILE <= PIXELS_PER_TILE / 2) then 
-                    pac.x = pac.xTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
+                if ghost.mode == "chase" or ghost.mode == "frightened" then ghost.mode = "scatter"
+                else ghost.mode = "chase"
                 end
-            end             
+            end
         end
     
-        if (pac.direction == "right") then
-            pac.x = pac.x + pac.speed;
-            if (maze[pac.yTile][pac.xTile + 1] ~= 1) then
-                if (pac.x % PIXELS_PER_TILE >= PIXELS_PER_TILE / 2) then 
-                    pac.x = pac.xTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
-                end
-            end             
-        end
+        for i, ghost in ipairs(ghosts) do
+            if (ghost.mode == "scatter") then
+                ghost.targetX = ghost.scatterX
+                ghost.targetY = ghost.scatterY
+            else
+                ghost:setTarget(pac, ghosts)
+            end
+            ghost.xTile, ghost.yTile = pixelToTile(ghost.x, ghost.y);
+            if ghost.direction == "left" then
+                ghost.x = ghost.x - ghost.speed
+                if (ghost.x % PIXELS_PER_TILE <= PIXELS_PER_TILE / 2) then 
+                    if (maze[ghost.yTile][ghost.xTile - 1] ~= 1 or ghost.nextDir == "up" or ghost.nextDir == "down") then
+                        ghost.x = ghost.xTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
+                        ghost.direction = ghost.nextDir
+                    end
+                end  
+            elseif ghost.direction == "right" then
+                ghost.x = ghost.x + ghost.speed
+                if (ghost.x % PIXELS_PER_TILE >= PIXELS_PER_TILE / 2) then 
+                    if (maze[ghost.yTile][ghost.xTile + 1] ~= 1 or ghost.nextDir == "up" or ghost.nextDir == "down") then
+                        ghost.x = ghost.xTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
+                        ghost.direction = ghost.nextDir
+                    end
+                end  
+            elseif ghost.direction == "up" then
+                ghost.y = ghost.y - ghost.speed
+                if (ghost.y % PIXELS_PER_TILE <= PIXELS_PER_TILE / 2) then 
+                    if (maze[ghost.yTile - 1][ghost.xTile] ~= 1 or ghost.nextDir == "left" or ghost.nextDir == "right") then
+                        ghost.y = ghost.yTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
+                        ghost.direction = ghost.nextDir
+                    end
+                end  
+            elseif ghost.direction == "down" then
+                ghost.y = ghost.y + ghost.speed
+                if (ghost.y % PIXELS_PER_TILE >= PIXELS_PER_TILE / 2) then 
+                    if (maze[ghost.yTile + 1][ghost.xTile] ~= 1 or ghost.nextDir == "left" or ghost.nextDir == "right") then
+                        ghost.y = ghost.yTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
+                        ghost.direction = ghost.nextDir
+                    end
+                end  
+            end
+            local newXTile, newYTile = pixelToTile(ghost.x, ghost.y)
 
-        if (pac.direction == "up") then
-            pac.y = pac.y - pac.speed;
-            if (maze[pac.yTile - 1][pac.xTile] ~= 1) then
-                if (pac.y % PIXELS_PER_TILE <= PIXELS_PER_TILE / 2) then 
-                    pac.y = pac.yTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
-                end
-            end             
-        end
-
-        if (pac.direction == "down") then
-            pac.y = pac.y + pac.speed;
-            if (maze[pac.yTile + 1][pac.xTile] ~= 1) then
-                if (pac.y % PIXELS_PER_TILE >= PIXELS_PER_TILE / 2) then 
-                    pac.y = pac.yTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
-                end
-            end             
-        end
-
-        if pressedKeys["left"] then
-            if (pac.direction == "right") then
-                pac.direction = "left"
-            elseif (pac.y % PIXELS_PER_TILE > (PIXELS_PER_TILE / 2 - pac.speed / 2) and pac.y % PIXELS_PER_TILE < (PIXELS_PER_TILE / 2 + pac.speed /2) and maze[pac.yTile][pac.xTile-1] == 1) then
-                pac.direction = "left"
-                pac.y = pac.yTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2)
-            end
-        elseif pressedKeys["right"] then
-            if (pac.direction == "left") then
-                pac.direction = "right"
-            elseif (pac.y % PIXELS_PER_TILE > (PIXELS_PER_TILE / 2 - pac.speed / 2) and pac.y % PIXELS_PER_TILE < (PIXELS_PER_TILE / 2 + pac.speed /2) and maze[pac.yTile][pac.xTile+1] == 1) then
-                pac.direction = "right"
-                pac.y = pac.yTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2)
-            end
-        elseif pressedKeys["up"] then
-            if (pac.direction == "down") then
-                pac.direction = "up"
-            elseif (pac.x % PIXELS_PER_TILE > (PIXELS_PER_TILE / 2 - pac.speed / 2) and pac.x % PIXELS_PER_TILE < (PIXELS_PER_TILE / 2 + pac.speed /2) and maze[pac.yTile-1][pac.xTile] == 1) then
-                pac.direction = "up"
-                pac.x = pac.xTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2)
-            end
-        elseif pressedKeys["down"] then
-            if (pac.direction == "up") then
-                pac.direction = "down"
-            elseif (pac.x % PIXELS_PER_TILE > (PIXELS_PER_TILE / 2 - pac.speed / 2) and pac.x % PIXELS_PER_TILE < (PIXELS_PER_TILE / 2 + pac.speed /2) and maze[pac.yTile+1][pac.xTile] == 1) then
-                pac.direction = "down"
-                pac.x = pac.xTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2)
-            end
-        end
-    end
-
-    -- Update animation timers
-    timer.powerBlink = (timer.powerBlink + dt) % 0.30
-    timer.ghostMode = timer.ghostMode + dt
-
-    if (timer.ghostMode > 9) then
-        timer.ghostMode = 0;
-        if (ghostMode ~= "frightened") then
-            for i, ghost in ipairs(ghosts) do
-                if ghost.direction == "left" then ghost.direction = "right"
-                elseif ghost.direction == "right" then ghost.direction = "left"
-                elseif ghost.direction == "up" then ghost.direction = "down"
-                else ghost.direction = "up"
+            -- check for eating or been eaten
+            if newXTile == pac.xTile and newYTile == pac.yTile then
+                if ghost.mode == "frightened" then
+                    ghost.x = ghost.startX;
+                    ghost.y = ghost.startY;
+                    ghost.direction = "left"
+                    gameState.halted = true
+                    gameState.ateGhost = true
+                    ghost.mode = "chase"
+                    timer.ateGhost = 1
+                    
+                    
+                else -- ate pacman
+                    gameState.halted = true
+                    timer.restart = 2
                 end
             end
-        end
-        if ghostMode == "chase" or ghostMode == "frightened" then ghostMode = "scatter"
-        else ghostMode = "chase"
-        end
-    end
-
-    for i, ghost in ipairs(ghosts) do
-        if (ghostMode == "scatter") then
-            ghost.targetX = ghost.scatterX
-            ghost.targetY = ghost.scatterY
-        else
-            ghost:setTarget(pac, ghosts)
-        end
-        ghost.xTile, ghost.yTile = pixelToTile(ghost.x, ghost.y);
-        if ghost.direction == "left" then
-            ghost.x = ghost.x - ghost.speed
-            if (ghost.x % PIXELS_PER_TILE <= PIXELS_PER_TILE / 2) then 
-                if (maze[ghost.yTile][ghost.xTile - 1] ~= 1 or ghost.nextDir == "up" or ghost.nextDir == "down") then
-                    ghost.x = ghost.xTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
-                    ghost.direction = ghost.nextDir
+            if (newXTile ~= ghost.xTile or newYTile ~= ghost.yTile) then
+                ghost.xTile = newXTile
+                ghost.yTile = newYTile
+                local candidates = {}
+                if maze[ghost.yTile - 1][ghost.xTile] == 1 and ghost.direction ~= "down" then
+                    candidates[#candidates + 1] = {ghost.xTile, ghost.yTile-1}
                 end
-            end  
-        elseif ghost.direction == "right" then
-            ghost.x = ghost.x + ghost.speed
-            if (ghost.x % PIXELS_PER_TILE >= PIXELS_PER_TILE / 2) then 
-                if (maze[ghost.yTile][ghost.xTile + 1] ~= 1 or ghost.nextDir == "up" or ghost.nextDir == "down") then
-                    ghost.x = ghost.xTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
-                    ghost.direction = ghost.nextDir
+                if maze[ghost.yTile + 1][ghost.xTile] == 1 and ghost.direction ~= "up" then
+                    candidates[#candidates + 1] = {ghost.xTile, ghost.yTile+1}
                 end
-            end  
-        elseif ghost.direction == "up" then
-            ghost.y = ghost.y - ghost.speed
-            if (ghost.y % PIXELS_PER_TILE <= PIXELS_PER_TILE / 2) then 
-                if (maze[ghost.yTile - 1][ghost.xTile] ~= 1 or ghost.nextDir == "left" or ghost.nextDir == "right") then
-                    ghost.y = ghost.yTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
-                    ghost.direction = ghost.nextDir
+                if maze[ghost.yTile][ghost.xTile - 1] == 1 and ghost.direction ~= "right" then
+                    candidates[#candidates + 1] = {ghost.xTile-1, ghost.yTile}
                 end
-            end  
-        elseif ghost.direction == "down" then
-            ghost.y = ghost.y + ghost.speed
-            if (ghost.y % PIXELS_PER_TILE >= PIXELS_PER_TILE / 2) then 
-                if (maze[ghost.yTile + 1][ghost.xTile] ~= 1 or ghost.nextDir == "left" or ghost.nextDir == "right") then
-                    ghost.y = ghost.yTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
-                    ghost.direction = ghost.nextDir
+                if maze[ghost.yTile][ghost.xTile + 1] == 1 and ghost.direction ~= "left" then
+                    candidates[#candidates + 1] = {ghost.xTile+1, ghost.yTile}
                 end
-            end  
-        end
-        local newXTile, newYTile = pixelToTile(ghost.x, ghost.y)
-        if (newXTile ~= ghost.xTile or newYTile ~= ghost.yTile) then
-            ghost.xTile = newXTile
-            ghost.yTile = newYTile
-            local candidates = {}
-            if maze[ghost.yTile - 1][ghost.xTile] == 1 and ghost.direction ~= "down" then
-                candidates[#candidates + 1] = {ghost.xTile, ghost.yTile-1}
-            end
-            if maze[ghost.yTile + 1][ghost.xTile] == 1 and ghost.direction ~= "up" then
-                candidates[#candidates + 1] = {ghost.xTile, ghost.yTile+1}
-            end
-            if maze[ghost.yTile][ghost.xTile - 1] == 1 and ghost.direction ~= "right" then
-                candidates[#candidates + 1] = {ghost.xTile-1, ghost.yTile}
-            end
-            if maze[ghost.yTile][ghost.xTile + 1] == 1 and ghost.direction ~= "left" then
-                candidates[#candidates + 1] = {ghost.xTile+1, ghost.yTile}
-            end
-            ghost.latestCandidateCount = #candidates
-            
-            local function setDirection(from, to, prefix)
-                local dir, msg
-                if to[1] < from.xTile then
-                    dir, msg = "left", "went left"
-                elseif to[1] > from.xTile then
-                    dir, msg = "right", "went right"
-                elseif to[2] < from.yTile then
-                    dir, msg = "up", "went up"
-                elseif to[2] > from.yTile then
-                    dir, msg = "down", "went down"
-                end
-                if dir then
-                    from.report = "Entered tile "..newXTile.."/"..newYTile..", " .. prefix .. msg
-                    from.nextDir = dir
-                end
-            end
-
-            if (ghostMode == "chase" or ghostMode == "scatter") then
-                local closest
-                local closestDist = math.huge
-                for _, cand in ipairs(candidates) do
-                    local dx = cand[1] - ghost.targetX
-                    local dy = cand[2] - ghost.targetY
-                    local dist = dx * dx + dy * dy -- distance squared for efficiency
-                    if dist < closestDist then
-                        closestDist = dist
-                        closest = cand
+                ghost.latestCandidateCount = #candidates
+                
+                local function setDirection(from, to, prefix)
+                    local dir, msg
+                    if to[1] < from.xTile then
+                        dir, msg = "left", "went left"
+                    elseif to[1] > from.xTile then
+                        dir, msg = "right", "went right"
+                    elseif to[2] < from.yTile then
+                        dir, msg = "up", "went up"
+                    elseif to[2] > from.yTile then
+                        dir, msg = "down", "went down"
+                    end
+                    if dir then
+                        from.report = "Entered tile "..newXTile.."/"..newYTile..", " .. prefix .. msg
+                        from.nextDir = dir
                     end
                 end
-                if closest then
-                    setDirection(ghost, closest, "decided to ")
+    
+                if (ghost.mode == "chase" or ghost.mode == "scatter") then
+                    local closest
+                    local closestDist = math.huge
+                    for _, cand in ipairs(candidates) do
+                        local dx = cand[1] - ghost.targetX
+                        local dy = cand[2] - ghost.targetY
+                        local dist = dx * dx + dy * dy -- distance squared for efficiency
+                        if dist < closestDist then
+                            closestDist = dist
+                            closest = cand
+                        end
+                    end
+                    if closest then
+                        setDirection(ghost, closest, "decided to ")
+                    end
+                elseif ghost.mode == "frightened" then
+                    local idx = math.random(1, #candidates)
+                    local chosen = candidates[idx]
+                    setDirection(ghost, chosen, "randomly ")
                 end
-            elseif ghostMode == "frightened" then
-                local idx = math.random(1, #candidates)
-                local chosen = candidates[idx]
-                setDirection(ghost, chosen, "randomly ")
             end
         end
-
+        timer.ghostMode = timer.ghostMode + dt
     end
+    -- Update animation timers
+    timer.powerBlink = (timer.powerBlink + dt) % 0.30
+
 end
 
 function love.draw()
@@ -439,8 +506,13 @@ function love.draw()
         love.graphics.setColor(1, 1, 1, 1)
     end
 
-    Renderer.drawPacman(pac, renderConfig)
-    Renderer.drawGhosts(ghosts, renderConfig, ghostMode);
+    if (not gameState.ateGhost) then
+        Renderer.drawPacman(pac, renderConfig)
+    else
+        love.graphics.setColor(1,1,1);
+        love.graphics.print("CHOMP!!", (pac.xTile - 1) * TILE_SIZE, pac.yTile * TILE_SIZE - (TILE_SIZE/2));
+    end
+    Renderer.drawGhosts(ghosts, renderConfig);
 
 
 
