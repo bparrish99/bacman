@@ -258,6 +258,7 @@ function love.update(dt)
                     dotEaten = true;
                     for i, ghost in ipairs(ghosts) do
                         ghost.mode = "frightened"
+                        ghost.speed = .5
                         if ghost.direction == "left" then ghost.direction = "right"
                         elseif ghost.direction == "right" then ghost.direction = "left"
                         elseif ghost.direction == "up" then ghost.direction = "down"
@@ -279,8 +280,12 @@ function love.update(dt)
                     else ghost.direction = "up"
                     end
                 end
-                if ghost.mode == "chase" or ghost.mode == "frightened" then ghost.mode = "scatter"
-                elseif ghost.mode == "scatter" then ghost.mode = "chase"
+                if ghost.mode == "chase" or ghost.mode == "frightened" then 
+                    ghost.mode = "scatter"
+                    ghost.speed = .85
+                elseif ghost.mode == "scatter" then 
+                    ghost.mode = "chase"
+                    ghost.speed = .85
                 end
             end
         end
@@ -333,6 +338,7 @@ function love.update(dt)
             local startXTile, startYTile = pixelToTile(ghost.startX, ghost.startY)
             if ghost.mode == "dead" and newXTile == startXTile and newYTile == startYTile then
                 ghost.mode = "chase"
+                ghost.speed=.85
             end
 
             -- check for eating or been eaten
@@ -342,6 +348,7 @@ function love.update(dt)
                     gameState.halted = true
                     gameState.ateGhost = ghost.name
                     ghost.mode = "dead"
+                    ghost.speed = 2
                     timer.ateGhost = 1
                     
                 elseif ghost.mode ~= "dead" then -- ate pacman
