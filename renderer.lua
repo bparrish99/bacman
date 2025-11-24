@@ -220,7 +220,6 @@ function renderer.drawPacman(pac, config)
     local y = (pac.y) * config.pixelSize
     local radius = tileSize * .8
     local mouthAngle = math.abs(math.rad((timer.t % .15) * 600) -.50)
-    print(mouthAngle)
 
     -- Determine rotation based on direction
     local direction = pac.direction or "left"

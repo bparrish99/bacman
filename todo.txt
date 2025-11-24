@@ -1,17 +1,15 @@
-- no double-chomps
+NEXT--
 
-THEN
+fix mouth
+graphic offset
+scoring
+round restart
+lives
+
+
  - scatter/chase/frightened timings
  - blinking frightened
 
-
-
-
-
-
-pac-man cornering logic
-
-round completion/reset/basic scoring
 
 -- CLEANUP --
 
@@ -21,13 +19,6 @@ ghost house stuff
 
 tunnels
 
-scoring
-
 basic sounds
 
 
-GHOST logic
------------
-If entering new tile, pick next tile, assign to "nextTileX/nextTileY"
-
-Each frame, check if in the center of tile (fuzzy, perhaps).  If so, change direction toward nextTile 

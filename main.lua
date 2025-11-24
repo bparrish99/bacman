@@ -1,5 +1,5 @@
 local DEBUG=false
-local PIXEL_SIZE=4
+local PIXEL_SIZE=2
 local TILE_SIZE = PIXEL_SIZE * 8
 local WALL_PADDING = 1
 local PELLET_RADIUS = 2
@@ -30,7 +30,7 @@ local windowWidth = cols * TILE_SIZE
 local windowHeight = rows * TILE_SIZE
 
 local colors = {
-    wall = {0.05, 0.27, 0.9},
+    wall = {0.3, 0.2, 0.6},
     pellet = {1.0, 0.86, 0.58},
     background = {0.02, 0.02, 0.05},
     power = {1.0, 0.86, 0.58, 0.9},
@@ -485,7 +485,7 @@ end
 
 function love.draw()
     Renderer.drawMaze(maze, renderConfig)
-    love.graphics.setColor(.9, .9, .9);
+    love.graphics.setColor(.9, .6, .3);
     
     for _,dot in ipairs(dots) do
         love.graphics.rectangle("fill", ((dot[1] - 1) * TILE_SIZE + TILE_SIZE / 2) - PIXEL_SIZE, ((dot[2] - 1) * TILE_SIZE + TILE_SIZE / 2) - PIXEL_SIZE, PIXEL_SIZE * 2, PIXEL_SIZE * 2);
