@@ -40,19 +40,16 @@ function renderer.drawPowerPellet(row, col, config)
 end
 
 function renderer.drawMaze(maze, config)
+    love.graphics.setScissor(2 * config.tileSize, 2 * config.tileSize, (#maze[1]-4) * config.tileSize, (#maze-2) * config.tileSize)
     local rows = #maze
     local cols = #maze[1]
     local colors = config.colors;
     local tileSize = config.tileSize;
 
+    local lineWidth = config.pixelSize * 2;
     for row = 1, rows do
         for col = 1, cols do
             local tile = maze[row][col]
-            if tile == 2 then 
-                love.graphics.setColor(.5,0,0);
-                love.graphics.line((col-1) * tileSize, (row-1) * tileSize, (col-1) * tileSize + tileSize, (row-1) * tileSize + tileSize)
-                love.graphics.line((col-1) * tileSize + tileSize, (row-1) * tileSize, (col-1) * tileSize, (row * tileSize))
-            end
             if tile ~= 1 and tile ~= 2 then
                 if mazeVal(row-1, col) == 1 or mazeVal(row-1,col) == 2 or mazeVal(row+1, col) == 1 or mazeVal(row+1,col) == 2 then
                     if mazeVal(row, col-1) == 0 or mazeVal(row, col-1) == 3 then
@@ -63,7 +60,7 @@ function renderer.drawMaze(maze, config)
                         end
                         local x = (col - 1) * tileSize
                         local y = (row - 1) * tileSize
-                        love.graphics.setLineWidth(3)
+                        love.graphics.setLineWidth(lineWidth)
                         love.graphics.line(
                             x + tileSize / 2, y + tileSize / 2,   -- middle of tile
                             x, y + tileSize / 2                   -- middle-left of tile
@@ -78,7 +75,7 @@ function renderer.drawMaze(maze, config)
                         local tileSize = config.tileSize
                         local x = (col - 1) * tileSize
                         local y = (row - 1) * tileSize
-                        love.graphics.setLineWidth(3)
+                        love.graphics.setLineWidth(lineWidth)
                         love.graphics.line(
                             x + tileSize / 2, y + tileSize / 2,   -- middle of tile
                             x + tileSize, y + tileSize / 2                   -- middle-left of tile
@@ -91,7 +88,7 @@ function renderer.drawMaze(maze, config)
                         local tileSize = config.tileSize
                         local x = (col - 1) * tileSize
                         local y = (row - 1) * tileSize
-                        love.graphics.setLineWidth(3)
+                        love.graphics.setLineWidth(lineWidth)
                         love.graphics.line(
                             x + tileSize / 2, y + tileSize / 2,   -- middle of tile
                             x + tileSize / 2, y                   -- middle-left of tile
@@ -102,7 +99,7 @@ function renderer.drawMaze(maze, config)
                         local tileSize = config.tileSize
                         local x = (col - 1) * tileSize
                         local y = (row - 1) * tileSize
-                        love.graphics.setLineWidth(3)
+                        love.graphics.setLineWidth(lineWidth)
                         love.graphics.line(
                             x + tileSize / 2, y + tileSize / 2,   -- middle of tile
                             x + tileSize / 2, y + tileSize                   -- middle-left of tile
@@ -115,7 +112,7 @@ function renderer.drawMaze(maze, config)
                         local tileSize = config.tileSize
                         local x = (col - 1) * tileSize
                         local y = (row - 1) * tileSize
-                        love.graphics.setLineWidth(3)
+                        love.graphics.setLineWidth(lineWidth)
                         love.graphics.line(
                             x + tileSize / 2, y + tileSize / 2,   -- middle of tile
                             x + tileSize / 2, y                   -- middle-left of tile
@@ -133,7 +130,7 @@ function renderer.drawMaze(maze, config)
                         local tileSize = config.tileSize
                         local x = (col - 1) * tileSize
                         local y = (row - 1) * tileSize
-                        love.graphics.setLineWidth(3)
+                        love.graphics.setLineWidth(lineWidth)
                         love.graphics.line(
                             x + tileSize / 2, y + tileSize / 2,
                             x + tileSize / 2, y
@@ -152,7 +149,7 @@ function renderer.drawMaze(maze, config)
                         local tileSize = config.tileSize
                         local x = (col - 1) * tileSize
                         local y = (row - 1) * tileSize
-                        love.graphics.setLineWidth(3)
+                        love.graphics.setLineWidth(lineWidth)
                         love.graphics.line(
                             x + tileSize / 2, y + tileSize / 2,
                             x + tileSize / 2, y + tileSize
@@ -171,7 +168,7 @@ function renderer.drawMaze(maze, config)
                         local tileSize = config.tileSize
                         local x = (col - 1) * tileSize
                         local y = (row - 1) * tileSize
-                        love.graphics.setLineWidth(3)
+                        love.graphics.setLineWidth(lineWidth)
                         love.graphics.line(
                             x + tileSize / 2, y + tileSize / 2,
                             x + tileSize / 2, y + tileSize

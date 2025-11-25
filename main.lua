@@ -10,7 +10,11 @@ local Maze = require("maze")
 
 timer = { powerBlink = 0, ghostMode = 0, t = 0 }
 gameState = {
-    halted = false
+    halted = false,
+    score = 0,
+    highScore = 0,
+    lives = 5,
+    level = 1
 }
 -- Convert pixel coordinates to tile coordinates (1-indexed)
 local function pixelToTile(x, y)
@@ -21,8 +25,8 @@ end
 
 -- Load maze data from separate module
 local maze = Maze.layout
-local dots = Maze.dots
-local powerPellets = Maze.powerPellets
+local dots = Maze.dots()
+local powerPellets = Maze.powerPellets()
 
 local rows = #maze
 local cols = #maze[1]
@@ -32,7 +36,7 @@ local windowHeight = rows * TILE_SIZE
 local colors = {
     wall = {0.3, 0.2, 0.6},
     pellet = {1.0, 0.86, 0.58},
-    background = {0.02, 0.02, 0.05},
+    background = {0.0, 0.00, 0.00},
     power = {1.0, 0.86, 0.58, 0.9},
     pacman = {1.0, 0.9, 0.2},
     sunglasses = {0.05, 0.05, 0.05}
@@ -49,27 +53,27 @@ local renderConfig = {
 }
 
 local pac = {
-    x = 14 * PIXELS_PER_TILE,
-    y = 23.5 * PIXELS_PER_TILE,
+    x = 16 * PIXELS_PER_TILE,
+    y = 25.5 * PIXELS_PER_TILE,
     xTile, yTile = pixelToTile(14 * PIXELS_PER_TILE, 23.5 * PIXELS_PER_TILE),
-    speed = 1,
+    speed = 1.3,
     direction = "left",
-    startX = 14 * PIXELS_PER_TILE,
-    startY = 23.5 * PIXELS_PER_TILE
+    startX = 16 * PIXELS_PER_TILE,
+    startY = 25.5 * PIXELS_PER_TILE
 }
 
 local ghosts = {
     {
         name = "Blinky",
         color = { 1, 0, 0 },
-        x = 14 * PIXELS_PER_TILE,
-        y = 11.5 * PIXELS_PER_TILE,
-        startX = 14 * PIXELS_PER_TILE,
-        startY = 11.5 * PIXELS_PER_TILE,
+        x = 16 * PIXELS_PER_TILE,
+        y = 13.5 * PIXELS_PER_TILE,
+        startX = 16 * PIXELS_PER_TILE,
+        startY = 13.5 * PIXELS_PER_TILE,
         direction = "left",
         mode = "scatter",
         speed = .85,
-        scatterX=28,scatterY=1,
+        scatterX=30,scatterY=3,
         setTarget = function(self, pac)
             -- Example: Blinky targets Pac-Man's current tile
             self.targetX = pac.xTile
@@ -79,14 +83,14 @@ local ghosts = {
     {
         name = "Pinky",
         color = { 1, .7, 1 },
-        x = 12 * PIXELS_PER_TILE,
-        y = 11.5 * PIXELS_PER_TILE,
-        startX = 12 * PIXELS_PER_TILE,
-        startY = 11.5 * PIXELS_PER_TILE,
+        x = 14 * PIXELS_PER_TILE,
+        y = 13.5 * PIXELS_PER_TILE,
+        startX = 14 * PIXELS_PER_TILE,
+        startY = 13.5 * PIXELS_PER_TILE,
         direction = "left",
         mode = "scatter",
         speed = .85,
-        scatterX=1, scatterY=1,
+        scatterX=3, scatterY=3,
         setTarget = function(self, pac)
             -- Example: Blinky targets Pac-Man's current tile
             if pac.direction == "left" then
@@ -110,15 +114,15 @@ local ghosts = {
     {
         name = "Inky",
         color = { .5, .7, 1 },
-        x = 16 * PIXELS_PER_TILE,
-        y = 11.5 * PIXELS_PER_TILE,
-        startX = 16 * PIXELS_PER_TILE,
-        startY = 11.5 * PIXELS_PER_TILE,
+        x = 18 * PIXELS_PER_TILE,
+        y = 13.5 * PIXELS_PER_TILE,
+        startX = 18 * PIXELS_PER_TILE,
+        startY = 13.5 * PIXELS_PER_TILE,
         direction = "left",
         mode = "scatter",
         speed = .85,
-        scatterX = 28,
-        scatterY = 31,
+        scatterX = 30,
+        scatterY = 33,
         setTarget = function(self, pac, ghosts)
             local anchorX, anchorY;
             -- Example: Blinky targets Pac-Man's current tile
@@ -158,10 +162,10 @@ local ghosts = {
     {
         name = "Clyde",
         color = { 1, .5, .2 },
-        x = 18 * PIXELS_PER_TILE,
-        y = 11.5 * PIXELS_PER_TILE,
-        startX = 18 * PIXELS_PER_TILE,
-        startY = 11.5 * PIXELS_PER_TILE,
+        x = 20 * PIXELS_PER_TILE,
+        y = 13.5 * PIXELS_PER_TILE,
+        startX = 20 * PIXELS_PER_TILE,
+        startY = 13.5 * PIXELS_PER_TILE,
         direction = "left",
         mode = "scatter",
         speed = .85,
@@ -180,8 +184,8 @@ local ghosts = {
                 self.targetY = 31
             end
         end,
-        scatterX = 1,
-        scatterY = 31,
+        scatterX = 3,
+        scatterY = 33,
     },
 }
 
@@ -220,12 +224,21 @@ function love.update(dt)
                     ghost.x = ghost.startX
                     ghost.y = ghost.startY
                     ghost.direction = "left"
+                    ghost.speed = 0.85
                 end
                 timer.startup = 2
                 for i, ghost in ipairs(ghosts) do
                     ghost.mode = "scatter"
                 end
                 timer.ghostMode = 0
+                
+                -- New round
+                if #dots == 0 and #powerPellets == 0 then
+                    dots = Maze.dots()
+                    powerPellets = Maze.powerPellets()
+                    gameState.betweenRounds = false
+                    gameState.level = gameState.level + 1
+                end
             end
         end
         if (timer.startup and timer.startup > 0) then
@@ -239,35 +252,59 @@ function love.update(dt)
                 gameState.ateGhost = false
             end
         end
+        if (timer.roundOver and timer.roundOver > 0) then
+            timer.roundOver = timer.roundOver - dt
+            if timer.roundOver <= 0 then timer.restart = 1 end
+        end
     else
+
+        -- tunnel
+        if pac.x < PIXELS_PER_TILE and pac.direction == "left" then pac.x = (#maze[1]-1)*PIXELS_PER_TILE end
+        if pac.x > (#maze[1]-1)*PIXELS_PER_TILE and pac.direction == "right" then pac.x=PIXELS_PER_TILE end
+
+        
         -- animation or future logic hooks could go here
         local dotEaten = false;
         pacXTile, pacYTile = pixelToTile(pac.x, pac.y);
+
         if (pacXTile ~= pac.xTile or pacYTile ~= pac.yTile) then -- pac-man in new tile
             pac.xTile = pacXTile;
             pac.yTile = pacYTile;
+
             for i, dot in ipairs(dots) do
                 if dot[1] == pacXTile and dot[2] == pacYTile then
                     table.remove(dots, i);
+                    gameState.score = gameState.score + 10;
                     dotEaten = true;
                 end
             end
             for i, powerPellet in ipairs(powerPellets) do
                 if powerPellet[1] == pacXTile and powerPellet[2] == pacYTile then
                     table.remove(powerPellets, i);
+                    gameState.score = gameState.score + 50;
                     dotEaten = true;
                     for i, ghost in ipairs(ghosts) do
-                        ghost.mode = "frightened"
-                        ghost.speed = .5
-                        if ghost.direction == "left" then ghost.direction = "right"
-                        elseif ghost.direction == "right" then ghost.direction = "left"
-                        elseif ghost.direction == "up" then ghost.direction = "down"
-                        else ghost.direction = "up"
+                        gameState.ghostValue = 200
+                        if ghost.mode ~= "dead" then 
+                            ghost.mode = "frightened"
+                            ghost.speed = .5
+                            if ghost.direction == "left" then ghost.direction = "right"
+                            elseif ghost.direction == "right" then ghost.direction = "left"
+                            elseif ghost.direction == "up" then ghost.direction = "down"
+                            else ghost.direction = "up"
+                            end
                         end
                     end
                     timer.ghostMode = 1 -- right now, this should force 8 seconds, refactor
                 end
             end
+        end
+
+        -- Is round clear?
+        if #dots == 0 and #powerPellets == 0 then
+            timer.roundOver = 2.5
+            gameState.halted = true
+            gameState.betweenRounds = true
         end
 
         if (timer.ghostMode > 9) then
@@ -350,9 +387,12 @@ function love.update(dt)
                     ghost.mode = "dead"
                     ghost.speed = 2
                     timer.ateGhost = 1
-                    
+                    gameState.score = gameState.score + gameState.ghostValue
+                    gameState.ghostValue = gameState.ghostValue * 2
                 elseif ghost.mode ~= "dead" then -- ate pacman
                     gameState.halted = true
+                    gameState.lives = gameState.lives - 1
+                    if gameState.lives == 0 and gameState.score > gameState.highScore then gameState.highScore = gameState.score end
                     timer.restart = 2
                 end
             end
@@ -417,7 +457,7 @@ function love.update(dt)
         if (not dotEaten) then
             if (pac.direction == "left") then
                 pac.x = pac.x - pac.speed;
-                if (maze[pac.yTile][pac.xTile - 1] ~= 1) then
+                if (maze[pac.yTile][pac.xTile - 1] ~= 1 and maze[pac.yTile][pac.xTile -1] ~= 2) then
                     if (pac.x % PIXELS_PER_TILE <= PIXELS_PER_TILE / 2) then 
                         pac.x = pac.xTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
                     end
@@ -426,7 +466,7 @@ function love.update(dt)
         
             if (pac.direction == "right") then
                 pac.x = pac.x + pac.speed;
-                if (maze[pac.yTile][pac.xTile + 1] ~= 1) then
+                if (maze[pac.yTile][pac.xTile + 1] ~= 1 and maze[pac.yTile][pac.xTile +1] ~= 2) then
                     if (pac.x % PIXELS_PER_TILE >= PIXELS_PER_TILE / 2) then 
                         pac.x = pac.xTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
                     end
@@ -435,7 +475,7 @@ function love.update(dt)
 
             if (pac.direction == "up") then
                 pac.y = pac.y - pac.speed;
-                if (maze[pac.yTile - 1][pac.xTile] ~= 1) then
+                if (maze[pac.yTile - 1][pac.xTile] ~= 1 and maze[pac.yTile-1][pac.xTile] ~= 2) then
                     if (pac.y % PIXELS_PER_TILE <= PIXELS_PER_TILE / 2) then 
                         pac.y = pac.yTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
                     end
@@ -444,7 +484,7 @@ function love.update(dt)
 
             if (pac.direction == "down") then
                 pac.y = pac.y + pac.speed;
-                if (maze[pac.yTile + 1][pac.xTile] ~= 1) then
+                if (maze[pac.yTile + 1][pac.xTile] ~= 1 and maze[pac.yTile + 1][pac.xTile] ~= 2) then
                     if (pac.y % PIXELS_PER_TILE >= PIXELS_PER_TILE / 2) then 
                         pac.y = pac.yTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
                     end
@@ -454,32 +494,34 @@ function love.update(dt)
             if pressedKeys["left"] then
                 if (pac.direction == "right") then
                     pac.direction = "left"
-                elseif (pac.y % PIXELS_PER_TILE > (PIXELS_PER_TILE / 2 - pac.speed / 1) and pac.y % PIXELS_PER_TILE < (PIXELS_PER_TILE / 2 + pac.speed /1) and maze[pac.yTile][pac.xTile-1] == 1) then
+                elseif (pac.y % PIXELS_PER_TILE > (PIXELS_PER_TILE / 2 - pac.speed / 1) and pac.y % PIXELS_PER_TILE < (PIXELS_PER_TILE / 2 + pac.speed /1) and (maze[pac.yTile][pac.xTile-1] == 1 or maze[pac.yTile][pac.xTile-1] == 2)) then
                     pac.direction = "left"
                     pac.y = pac.yTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2)
                 end
             elseif pressedKeys["right"] then
                 if (pac.direction == "left") then
                     pac.direction = "right"
-                elseif (pac.y % PIXELS_PER_TILE > (PIXELS_PER_TILE / 2 - pac.speed / 1) and pac.y % PIXELS_PER_TILE < (PIXELS_PER_TILE / 2 + pac.speed /1) and maze[pac.yTile][pac.xTile+1] == 1) then
+                elseif (pac.y % PIXELS_PER_TILE > (PIXELS_PER_TILE / 2 - pac.speed / 1) and pac.y % PIXELS_PER_TILE < (PIXELS_PER_TILE / 2 + pac.speed /1) and (maze[pac.yTile][pac.xTile+1] == 1 or maze[pac.yTile][pac.xTile+1] == 2)) then
                     pac.direction = "right"
                     pac.y = pac.yTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2)
                 end
             elseif pressedKeys["up"] then
                 if (pac.direction == "down") then
                     pac.direction = "up"
-                elseif (pac.x % PIXELS_PER_TILE > (PIXELS_PER_TILE / 2 - pac.speed / 1) and pac.x % PIXELS_PER_TILE < (PIXELS_PER_TILE / 2 + pac.speed /1) and maze[pac.yTile-1][pac.xTile] == 1) then
+                elseif (pac.x % PIXELS_PER_TILE > (PIXELS_PER_TILE / 2 - pac.speed / 1) and pac.x % PIXELS_PER_TILE < (PIXELS_PER_TILE / 2 + pac.speed /1) and (maze[pac.yTile-1][pac.xTile] == 1 or maze[pac.yTile-1][pac.xTile] == 2)) then
                     pac.direction = "up"
                     pac.x = pac.xTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2)
                 end
             elseif pressedKeys["down"] then
                 if (pac.direction == "up") then
                     pac.direction = "down"
-                elseif (pac.x % PIXELS_PER_TILE > (PIXELS_PER_TILE / 2 - pac.speed / 1) and pac.x % PIXELS_PER_TILE < (PIXELS_PER_TILE / 2 + pac.speed /1) and maze[pac.yTile+1][pac.xTile] == 1) then
+                elseif (pac.x % PIXELS_PER_TILE > (PIXELS_PER_TILE / 2 - pac.speed / 1) and pac.x % PIXELS_PER_TILE < (PIXELS_PER_TILE / 2 + pac.speed /1) and (maze[pac.yTile+1][pac.xTile] == 1 or maze[pac.yTile+1][pac.xTile] == 2)) then
                     pac.direction = "down"
                     pac.x = pac.xTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2)
                 end
             end
+
+            
         end
 
 
@@ -491,7 +533,41 @@ function love.update(dt)
 end
 
 function love.draw()
+
+    -- I SAY YOU HE DEAD
+    if gameState.lives == 0 then
+        local message = "YOU LOSE"
+        local fontSize = TILE_SIZE * 3
+        local prevFont = love.graphics.getFont()
+        local loseFont = love.graphics.newFont(fontSize)
+        love.graphics.setFont(loseFont)
+
+        local textWidth = loseFont:getWidth(message)
+        local textHeight = loseFont:getHeight()
+        local x = (windowWidth - textWidth) / 2
+        local y = (windowHeight - textHeight) / 2
+
+        love.graphics.setColor(1, 0.1, 0.1)
+        love.graphics.print(message, x, y)
+
+        -- Restore previous font for rest of draw
+        love.graphics.setFont(prevFont)
+        return
+    end
+
+    local originalMazeColor = renderConfig.colors.wall
+    local mazeColor = renderConfig.colors.wall
+    if timer.roundOver then
+        if timer.roundOver > 1 then mazeColor = originalMazeColor
+        elseif timer.roundOver > .7 then mazeColor = {1,1,1}
+        elseif timer.roundOver > .4 then mazeColor = originalMazeColor
+        elseif timer.roundOver > .1 then mazeColor = {1,1,1}
+        end
+
+    end
+    renderConfig.colors.wall = mazeColor
     Renderer.drawMaze(maze, renderConfig)
+    renderConfig.colors.wall = originalMazeColor;
     love.graphics.setColor(.9, .6, .3);
     
     for _,dot in ipairs(dots) do
@@ -504,36 +580,53 @@ function love.draw()
         end
     end
 
-    if #dots == 0 then
-        local winText = "OMG YOU WINNED!111!1"
-        local fontSize = 48
-        local font = love.graphics.newFont(fontSize)
-        love.graphics.setFont(font)
-        local textWidth = font:getWidth(winText)
-        local textHeight = font:getHeight()
-        love.graphics.setColor(1, 1, 0, 1)
-        love.graphics.print(
-            winText, 
-            (windowWidth - textWidth) / 2, 
-            (windowHeight - textHeight) / 2
-        )
-        love.graphics.setColor(1, 1, 1, 1)
-    end
-
     if (not gameState.ateGhost) then
         Renderer.drawPacman(pac, renderConfig)
     else
         love.graphics.setColor(1,1,1);
-        love.graphics.print("CHOMP!!", (pac.xTile - 1) * TILE_SIZE, pac.yTile * TILE_SIZE - (TILE_SIZE/2));
+        local scoreFont = love.graphics.newFont(PIXEL_SIZE * 6)
+        love.graphics.setFont(scoreFont)
+        love.graphics.print(gameState.ghostValue / 2, (pac.xTile - 1.2) * TILE_SIZE, pac.yTile * TILE_SIZE - (TILE_SIZE));
     end
-    Renderer.drawGhosts(ghosts, renderConfig);
+    
+    if (not gameState.betweenRounds) then 
+        Renderer.drawGhosts(ghosts, renderConfig);
+    end
 
+    love.graphics.setScissor()
+    -- Start a font where each letter is TILE_SIZE high and wide
+    if not font or font:getHeight() ~= TILE_SIZE then
+        font = love.graphics.newFont(TILE_SIZE * 2)
+        love.graphics.setFont(font)
+    end
 
+    -- scores
+    love.graphics.setColor(.5,1,.5);
+    love.graphics.print(gameState.score, TILE_SIZE * 3, PIXEL_SIZE)
+    love.graphics.setColor(1,.8,.8);
+    love.graphics.print(gameState.highScore, TILE_SIZE * (#maze[1]/1.5), PIXEL_SIZE)
+    love.graphics.setColor(.2,.2,1);
+    love.graphics.print(gameState.level, TILE_SIZE * (#maze[1] - 4), (#maze - 2) * TILE_SIZE - (PIXEL_SIZE * 2))
+
+    -- lives left
+    local mouthAngle = math.rad(50)
+
+    love.graphics.setColor(colors.pacman)
+    for i = 1, gameState.lives - 1 do
+        love.graphics.arc(
+            "fill",
+            TILE_SIZE * (2 + i*2), (#maze - 1) * TILE_SIZE,
+            TILE_SIZE * .8,
+            mouthAngle,
+            (math.pi * 2) - mouthAngle
+        )
+    end
 
     if (DEBUG) then
-        love.graphics.setColor(1,1,1);
         local colTile, rowTile = pixelToTile(pac.x, pac.y);
-        if maze[rowTile][colTile] == 1 then
+        love.graphics.setColor(1,1,1);
+        love.graphics.print(colTile .. "/" .. rowTile, 100,100)
+            if maze[rowTile][colTile] == 1 then
             love.graphics.setColor(.1,1,.1,.5);
             love.graphics.rectangle("fill", (colTile - 1) * TILE_SIZE, (rowTile - 1) * TILE_SIZE, TILE_SIZE, TILE_SIZE);
         end
