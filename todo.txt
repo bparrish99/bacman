@@ -1,24 +1,18 @@
 NEXT--
 
-fix mouth
-graphic offset
-scoring
-round restart
-lives
-
-
- - scatter/chase/frightened timings
+ - ghost tunnels
  - blinking frightened
+ - fix mouth
+ - speed/scatter/chase/frightened timings
 
 
 -- CLEANUP --
 
+game over/start screen
 fruit
 
 ghost house stuff
 
-tunnels
-
 basic sounds
-
+graphics
 
