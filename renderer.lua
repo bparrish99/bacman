@@ -251,7 +251,6 @@ function renderer.drawPacman(pac, config)
         (math.pi * 2) - mouthAngle + rotation
     )
 
-
     if pac.moufDirection == nil then pac.moufDirection = 2 end
 
     if pac.moved then

@@ -56,7 +56,7 @@ local pac = {
     x = 16 * PIXELS_PER_TILE,
     y = 25.5 * PIXELS_PER_TILE,
     xTile, yTile = pixelToTile(14 * PIXELS_PER_TILE, 23.5 * PIXELS_PER_TILE),
-    speed = 1.3,
+    speed = 2,
     direction = "left",
     startX = 16 * PIXELS_PER_TILE,
     startY = 25.5 * PIXELS_PER_TILE,
@@ -215,6 +215,7 @@ end
 function love.update(dt)
     timer.t = timer.t + dt
     pac.moved = false
+    local oldScore = gameState.score
     if gameState.halted then
         if (timer.restart and timer.restart > 0) then
             timer.restart = timer.restart - dt
@@ -379,7 +380,7 @@ function love.update(dt)
                 end  
             end
             local newXTile, newYTile = pixelToTile(ghost.x, ghost.y)
-            if maze[ghost.yTile][ghost.xTile] == 1 and maze[newYTile][newXTile] == 2 then
+            if maze[ghost.yTile][ghost.xTile] == 1 and maze[newYTile][newXTile] == 2 and ghost.mode ~= "dead" then
                 ghost.preTunnelSpeed = ghost.speed
                 ghost.speed = .5
             end
@@ -551,7 +552,9 @@ function love.update(dt)
     end
     -- Update animation timers
     timer.powerBlink = (timer.powerBlink + dt) % 0.30
-
+    if oldScore < 10000 and gameState.score >= 10000 then
+        gameState.lives = gameState.lives + 1
+    end
 end
 
 function love.draw()
@@ -628,7 +631,7 @@ function love.draw()
     love.graphics.setColor(1,.8,.8);
     love.graphics.print(gameState.highScore, TILE_SIZE * (#maze[1]/1.5), PIXEL_SIZE)
     love.graphics.setColor(.2,.2,1);
-    love.graphics.print(gameState.level, TILE_SIZE * (#maze[1] - 4), (#maze - 2) * TILE_SIZE - (PIXEL_SIZE * 2))
+    love.graphics.print(Maze.getLevelConfig(gameState.level).fruit, TILE_SIZE * (#maze[1]/1.5), (#maze - 2) * TILE_SIZE - (PIXEL_SIZE * 4))
 
     -- lives left
     local mouthAngle = math.rad(50)

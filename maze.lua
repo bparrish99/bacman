@@ -80,5 +80,27 @@ maze.powerPellets = function()
 }
 end
 
+-- Define level configurations with ranges
+local levelConfigs = {
+    { range = {1, 2}, fruit = "cherry" },
+    { range = {3, 6}, fruit = "strawberry" },
+    { range = {7, 9}, fruit = "orange" },
+    { range = {10, 12}, fruit = "apple" },
+    { range = {13, 16}, fruit = "melon" },
+    -- 17+ same config
+    { range = {17, math.huge}, fruit = "key" },
+}
+
+
+maze.getLevelConfig = function(level)
+    for _, config in ipairs(levelConfigs) do
+        if level >= config.range[1] and level <= config.range[2] then
+            return { fruit = config.fruit }
+        end
+    end
+    -- Default config if no match (should not happen)
+    return { fruit = "cherry" }
+end
+
 return maze
 
