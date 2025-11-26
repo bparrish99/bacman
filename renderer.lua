@@ -191,7 +191,16 @@ function renderer.drawGhosts(ghosts, config)
     for i,ghost in ipairs(ghosts) do
         if (ghost.mode ~= "dead") then
             if (ghost.mode == "frightened") then
-                love.graphics.setColor(.3,.3,1);
+                if timer.ghostMode < 7 then love.graphics.setColor(.3,.3,1); 
+                elseif timer.ghostMode < 7.25 then love.graphics.setColor(.9,.9,.9)
+                elseif timer.ghostMode < 7.50 then love.graphics.setColor(.3,.3,1) 
+                elseif timer.ghostMode < 7.75 then love.graphics.setColor(.9,.9,.9)
+                elseif timer.ghostMode < 8 then love.graphics.setColor(.3,.3,1) 
+                elseif timer.ghostMode < 8.25 then love.graphics.setColor(.9,.9,.9)
+                elseif timer.ghostMode < 8.5 then love.graphics.setColor(.3,.3,1) 
+                elseif timer.ghostMode < 8.75 then love.graphics.setColor(.9,.9,.9)
+                elseif timer.ghostMode < 9 then love.graphics.setColor(.3,.3,1) 
+                end
             else 
                 love.graphics.setColor(ghost.color[1], ghost.color[2], ghost.color[3]);
             end
