@@ -328,6 +328,12 @@ function love.update(dt)
         end
     
         for i, ghost in ipairs(ghosts) do
+
+            -- tunnel
+            if ghost.x < PIXELS_PER_TILE and ghost.direction == "left" then ghost.x = (#maze[1]-1)*PIXELS_PER_TILE end
+            if ghost.x > (#maze[1]-1)*PIXELS_PER_TILE and ghost.direction == "right" then ghost.x=PIXELS_PER_TILE end
+            ghost.xTile, ghost.yTile = pixelToTile(ghost.x, ghost.y)
+    
             if (ghost.mode == "scatter") then
                 ghost.targetX = ghost.scatterX
                 ghost.targetY = ghost.scatterY
@@ -340,7 +346,7 @@ function love.update(dt)
             if ghost.direction == "left" then
                 ghost.x = ghost.x - ghost.speed
                 if (ghost.x % PIXELS_PER_TILE <= PIXELS_PER_TILE / 2) then 
-                    if (maze[ghost.yTile][ghost.xTile - 1] ~= 1 or ghost.nextDir == "up" or ghost.nextDir == "down") then
+                    if ((maze[ghost.yTile][ghost.xTile - 1] ~= 1 and maze[ghost.yTile][ghost.xTile - 1] ~= 2) or ghost.nextDir == "up" or ghost.nextDir == "down") then
                         ghost.x = ghost.xTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
                         ghost.direction = ghost.nextDir
                     end
@@ -348,7 +354,7 @@ function love.update(dt)
             elseif ghost.direction == "right" then
                 ghost.x = ghost.x + ghost.speed
                 if (ghost.x % PIXELS_PER_TILE >= PIXELS_PER_TILE / 2) then 
-                    if (maze[ghost.yTile][ghost.xTile + 1] ~= 1 or ghost.nextDir == "up" or ghost.nextDir == "down") then
+                    if ((maze[ghost.yTile][ghost.xTile + 1] ~= 1 and maze[ghost.yTile][ghost.xTile + 1] ~= 2) or ghost.nextDir == "up" or ghost.nextDir == "down") then
                         ghost.x = ghost.xTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
                         ghost.direction = ghost.nextDir
                     end
@@ -356,7 +362,7 @@ function love.update(dt)
             elseif ghost.direction == "up" then
                 ghost.y = ghost.y - ghost.speed
                 if (ghost.y % PIXELS_PER_TILE <= PIXELS_PER_TILE / 2) then 
-                    if (maze[ghost.yTile - 1][ghost.xTile] ~= 1 or ghost.nextDir == "left" or ghost.nextDir == "right") then
+                    if ((maze[ghost.yTile - 1][ghost.xTile] ~= 1 and maze[ghost.yTile - 1][ghost.xTile] ~= 2) or ghost.nextDir == "left" or ghost.nextDir == "right") then
                         ghost.y = ghost.yTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
                         ghost.direction = ghost.nextDir
                     end
@@ -364,14 +370,20 @@ function love.update(dt)
             elseif ghost.direction == "down" then
                 ghost.y = ghost.y + ghost.speed
                 if (ghost.y % PIXELS_PER_TILE >= PIXELS_PER_TILE / 2) then 
-                    if (maze[ghost.yTile + 1][ghost.xTile] ~= 1 or ghost.nextDir == "left" or ghost.nextDir == "right") then
+                    if ((maze[ghost.yTile + 1][ghost.xTile] ~= 1 and maze[ghost.yTile + 1][ghost.xTile] ~= 2) or ghost.nextDir == "left" or ghost.nextDir == "right") then
                         ghost.y = ghost.yTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
                         ghost.direction = ghost.nextDir
                     end
                 end  
             end
             local newXTile, newYTile = pixelToTile(ghost.x, ghost.y)
-
+            if maze[ghost.yTile][ghost.xTile] == 1 and maze[newYTile][newXTile] == 2 then
+                ghost.preTunnelSpeed = ghost.speed
+                ghost.speed = .5
+            end
+            if maze[ghost.yTile][ghost.xTile] == 2 and maze[newYTile][newXTile] == 1 and ghost.speed == .5 then
+                ghost.speed = ghost.preTunnelSpeed
+            end
             local startXTile, startYTile = pixelToTile(ghost.startX, ghost.startY)
             if ghost.mode == "dead" and newXTile == startXTile and newYTile == startYTile then
                 ghost.mode = "chase"
@@ -400,16 +412,16 @@ function love.update(dt)
                 ghost.xTile = newXTile
                 ghost.yTile = newYTile
                 local candidates = {}
-                if maze[ghost.yTile - 1][ghost.xTile] == 1 and ghost.direction ~= "down" then
+                if (maze[ghost.yTile - 1][ghost.xTile] == 1 or maze[ghost.yTile - 1][ghost.xTile] == 2)and ghost.direction ~= "down" then
                     candidates[#candidates + 1] = {ghost.xTile, ghost.yTile-1}
                 end
-                if maze[ghost.yTile + 1][ghost.xTile] == 1 and ghost.direction ~= "up" then
+                if (maze[ghost.yTile + 1][ghost.xTile] == 1 or maze[ghost.yTile + 1][ghost.xTile] == 2) and ghost.direction ~= "up" then
                     candidates[#candidates + 1] = {ghost.xTile, ghost.yTile+1}
                 end
-                if maze[ghost.yTile][ghost.xTile - 1] == 1 and ghost.direction ~= "right" then
+                if (maze[ghost.yTile][ghost.xTile - 1] == 1 or maze[ghost.yTile][ghost.xTile - 1] == 2) and ghost.direction ~= "right" then
                     candidates[#candidates + 1] = {ghost.xTile-1, ghost.yTile}
                 end
-                if maze[ghost.yTile][ghost.xTile + 1] == 1 and ghost.direction ~= "left" then
+                if (maze[ghost.yTile][ghost.xTile + 1] == 1 or maze[ghost.yTile][ghost.xTile + 1] == 2) and ghost.direction ~= "left" then
                     candidates[#candidates + 1] = {ghost.xTile+1, ghost.yTile}
                 end
                 ghost.latestCandidateCount = #candidates
@@ -447,9 +459,15 @@ function love.update(dt)
                         setDirection(ghost, closest, "decided to ")
                     end
                 elseif ghost.mode == "frightened" then
-                    local idx = math.random(1, #candidates)
-                    local chosen = candidates[idx]
-                    setDirection(ghost, chosen, "randomly ")
+                    -- In tunnels or corners it's possible to have no valid candidate tiles.
+                    -- Guard against that so we don't pass a nil target to setDirection.
+                    if #candidates > 0 then
+                        local idx = math.random(1, #candidates)
+                        local chosen = candidates[idx]
+                        if chosen then
+                            setDirection(ghost, chosen, "randomly ")
+                        end
+                    end
                 end
             end
         end
