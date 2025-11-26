@@ -80,17 +80,53 @@ maze.powerPellets = function()
 }
 end
 
--- Define level configurations with ranges
-local levelConfigs = {
-    { range = {1, 2}, fruit = "cherry" },
-    { range = {3, 6}, fruit = "strawberry" },
-    { range = {7, 9}, fruit = "orange" },
-    { range = {10, 12}, fruit = "apple" },
-    { range = {13, 16}, fruit = "melon" },
-    -- 17+ same config
-    { range = {17, math.huge}, fruit = "key" },
+local fruits = {
+    cherry = {
+        name = "Cherry",
+        score = 100,
+    },
+    strawberry = {
+        name = "Strawberry",
+        score = 300
+    },
+    peach = {
+        name = "Peach",
+        score = 500
+    },
+    apple = {
+        name = "Apple",
+        score = 700
+    },
+    melon = {
+        name = "Melon",
+        score = 1000
+    },
+    galaxian = {
+        name = "Galaxian",
+        score = 2000
+    },
+    bell = {
+        name = "Bell",
+        score = 3000
+    },
+    key = {
+        name = "Key",
+        score = 5000
+    }
 }
 
+
+-- Define level configurations with ranges
+local levelConfigs = {
+    { range = {1, 1}, fruit = fruits.cherry },
+    { range = {2, 2}, fruit = fruits.strawberry },
+    { range = {3, 4}, fruit = fruits.peach },
+    { range = {5, 6}, fruit = fruits.apple },
+    { range = {7, 8}, fruit = fruits.melon },
+    { range = {9, 10}, fruit = fruits.galaxian },
+    { range = {11, 12}, fruit = fruits.bell },
+    { range = {13, math.huge}, fruit = fruits.key },
+}
 
 maze.getLevelConfig = function(level)
     for _, config in ipairs(levelConfigs) do

@@ -631,7 +631,7 @@ function love.draw()
     love.graphics.setColor(1,.8,.8);
     love.graphics.print(gameState.highScore, TILE_SIZE * (#maze[1]/1.5), PIXEL_SIZE)
     love.graphics.setColor(.2,.2,1);
-    love.graphics.print(Maze.getLevelConfig(gameState.level).fruit, TILE_SIZE * (#maze[1]/1.5), (#maze - 2) * TILE_SIZE - (PIXEL_SIZE * 4))
+    love.graphics.print(Maze.getLevelConfig(gameState.level).fruit.name, TILE_SIZE * (#maze[1]/1.5), (#maze - 2) * TILE_SIZE - (PIXEL_SIZE * 4))
 
     -- lives left
     local mouthAngle = math.rad(50)
