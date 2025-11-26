@@ -59,7 +59,8 @@ local pac = {
     speed = 1.3,
     direction = "left",
     startX = 16 * PIXELS_PER_TILE,
-    startY = 25.5 * PIXELS_PER_TILE
+    startY = 25.5 * PIXELS_PER_TILE,
+    mouf = 4
 }
 
 local ghosts = {
@@ -213,6 +214,7 @@ end
 
 function love.update(dt)
     timer.t = timer.t + dt
+    pac.moved = false
     if gameState.halted then
         if (timer.restart and timer.restart > 0) then
             timer.restart = timer.restart - dt
@@ -472,6 +474,7 @@ function love.update(dt)
             end
         end
         
+        local oldX, oldY = pac.x, pac.y
         if (not dotEaten) then
             if (pac.direction == "left") then
                 pac.x = pac.x - pac.speed;
@@ -538,6 +541,7 @@ function love.update(dt)
                     pac.x = pac.xTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2)
                 end
             end
+            if pac.x ~= oldX or pac.y ~= oldY then pac.moved = true end
 
             
         end

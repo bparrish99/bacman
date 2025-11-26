@@ -227,7 +227,7 @@ function renderer.drawPacman(pac, config)
     local x = (pac.x) * config.pixelSize
     local y = (pac.y) * config.pixelSize
     local radius = tileSize * .8
-    local mouthAngle = math.abs(math.rad((timer.t % .15) * 600) -.50)
+    local mouthAngle = math.rad(pac.mouf * 10)
 
     -- Determine rotation based on direction
     local direction = pac.direction or "left"
@@ -250,6 +250,20 @@ function renderer.drawPacman(pac, config)
         mouthAngle + rotation,
         (math.pi * 2) - mouthAngle + rotation
     )
+
+
+    if pac.moufDirection == nil then pac.moufDirection = 2 end
+
+    if pac.moved then
+        pac.mouf = pac.mouf + pac.moufDirection
+        if pac.mouf > 6 then
+            pac.mouf = 4
+            pac.moufDirection = -2
+        elseif pac.mouf < 0 then
+            pac.mouf = 2
+            pac.moufDirection = 2
+        end
+    end
 
 end
 
