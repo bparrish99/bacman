@@ -1,14 +1,11 @@
 NEXT--
 
- - ghost tunnels
- - blinking frightened
- - fix mouth
+ - game over/start screen
  - speed/scatter/chase/frightened timings
 
 
 -- CLEANUP --
 
-game over/start screen
 fruit
 
 ghost house stuff
