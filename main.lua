@@ -589,7 +589,7 @@ function love.draw()
         love.graphics.print(gameState.ghostValue / 2, (pac.xTile - 1.2) * TILE_SIZE, pac.yTile * TILE_SIZE - (TILE_SIZE));
     end
     
-    if (not gameState.betweenRounds) then 
+    if (not gameState.betweenRounds or timer.roundOver > 1) then 
         Renderer.drawGhosts(ghosts, renderConfig);
     end
 
