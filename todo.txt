@@ -1,6 +1,11 @@
 NEXT--
  - speed/scatter/chase/frightened timings
- - ghost house stuff
+ - ghost stuff #1 (starting in there, going back there, etc)
+ 
+ SHIP 0.01
+ 
+
+ - ghost stuff 2 (leaving timings)
 
 
 -- CLEANUP --
