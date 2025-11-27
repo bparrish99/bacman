@@ -39,7 +39,7 @@ end
 function love.load()
     love.window.setTitle("Pinbac-Man")
     love.window.setMode(windowWidth, windowHeight, {resizable = false})
-    love.graphics.setBackgroundColor({.05, .05, .1})
+    love.graphics.setBackgroundColor({0,0,0})
     timer.startup = 2
     gameState.halted = true
 end
