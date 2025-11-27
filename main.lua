@@ -85,6 +85,7 @@ function love.update(dt)
                         ghost.speed = 0.85
                     end
                     timer.startup = 2
+                    timer.fruit = false
                     for i, ghost in ipairs(ghosts) do
                         ghost.mode = "scatter"
                     end
@@ -132,6 +133,9 @@ function love.update(dt)
                 for i, dot in ipairs(dots) do
                     if dot[1] == pacXTile and dot[2] == pacYTile then
                         table.remove(dots, i);
+                        if #dots == 70 or #dots == 170 then
+                            timer.fruit = 9
+                        end
                         gameState.score = gameState.score + 10;
                         dotEaten = true;
                     end
@@ -404,10 +408,20 @@ function love.update(dt)
                 end
                 if pac.x ~= oldX or pac.y ~= oldY then pac.moved = true end
 
-                
+                -- check for fruit eaten
+                if pac.moved and timer.fruit and timer.fruit > 0 then
+                    local fruit = Maze.getLevelConfig(gameState.level).fruit
+                    if pac.x > fruit.x - pac.speed and pac.x < fruit.x + pac.speed and pac.y > fruit.y - pac.speed and pac.y < fruit.y + pac.speed then
+                        timer.fruit = 0
+                        timer.fruitScore = 2
+                        gameState.score = gameState.score + fruit.score
+                    end
+                end
+
             end
 
-
+            if timer.fruit and timer.fruit > 0 then timer.fruit = timer.fruit - dt end
+            if timer.fruitScore and timer.fruitScore > 0 then timer.fruitScore = timer.fruitScore - dt end
             timer.ghostMode = timer.ghostMode + dt
         end
         -- Update animation timers
@@ -477,6 +491,30 @@ function love.draw()
             for _,powerPellet in ipairs(powerPellets) do
                 love.graphics.circle("fill", (powerPellet[1] - 1) * TILE_SIZE + TILE_SIZE / 2, (powerPellet[2] - 1) * TILE_SIZE + TILE_SIZE / 2, PIXEL_SIZE * 4);
             end
+        end
+
+        if timer.fruit and timer.fruit > 0 then
+            love.graphics.setColor(.7, .2, .5)
+            local fruitConfig = Maze.getLevelConfig(gameState.level).fruit
+            love.graphics.setLineWidth(PIXEL_SIZE);
+            local fruitX = fruitConfig.x * PIXEL_SIZE;
+            local fruitY = fruitConfig.y * PIXEL_SIZE;
+            love.graphics.circle("line", fruitX, fruitY, TILE_SIZE * .8)
+            local fruitFont = love.graphics.newFont(PIXEL_SIZE * 3)
+            love.graphics.setFont(fruitFont)
+            love.graphics.setColor(1, 1, 1)
+            local fruitText = fruitConfig.name
+            local textWidth = fruitFont:getWidth(fruitText)
+            local textHeight = fruitFont:getHeight()
+            love.graphics.print(fruitText, fruitX - textWidth / 2, fruitY - textHeight / 2)
+        end
+
+        if timer.fruitScore and timer.fruitScore > 0 then
+            local fruit = Maze.getLevelConfig(gameState.level).fruit
+            love.graphics.setColor(1,1,1);
+            local scoreFont = love.graphics.newFont(PIXEL_SIZE * 6)
+            love.graphics.setFont(scoreFont)
+            love.graphics.print(fruit.score, fruit.x * PIXEL_SIZE - 6 * PIXEL_SIZE, fruit.y * PIXEL_SIZE - 3 * PIXEL_SIZE);
         end
 
         if (not gameState.ateGhost) then

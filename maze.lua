@@ -84,34 +84,50 @@ local fruits = {
     cherry = {
         name = "Cherry",
         score = 100,
+        x = 16 * PIXELS_PER_TILE,
+        y = 19.5 * PIXELS_PER_TILE
     },
     strawberry = {
         name = "Strawberry",
-        score = 300
+        score = 300,
+        x = 16 * PIXELS_PER_TILE,
+        y = 19.5 * PIXELS_PER_TILE
     },
     peach = {
         name = "Peach",
-        score = 500
+        score = 500,
+        x = 16 * PIXELS_PER_TILE,
+        y = 19.5 * PIXELS_PER_TILE
     },
     apple = {
         name = "Apple",
-        score = 700
+        score = 700,
+        x = 16 * PIXELS_PER_TILE,
+        y = 19.5 * PIXELS_PER_TILE
     },
     melon = {
         name = "Melon",
-        score = 1000
+        score = 1000,
+        x = 16 * PIXELS_PER_TILE,
+        y = 19.5 * PIXELS_PER_TILE
     },
     galaxian = {
         name = "Galaxian",
-        score = 2000
+        score = 2000,
+        x = 16 * PIXELS_PER_TILE,
+        y = 19.5 * PIXELS_PER_TILE
     },
     bell = {
         name = "Bell",
-        score = 3000
+        score = 3000,
+        x = 16 * PIXELS_PER_TILE,
+        y = 19.5 * PIXELS_PER_TILE
     },
     key = {
         name = "Key",
-        score = 5000
+        score = 5000,
+        x = 16 * PIXELS_PER_TILE,
+        y = 19.5 * PIXELS_PER_TILE
     }
 }
 

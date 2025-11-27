@@ -1,12 +1,9 @@
 NEXT--
-
- - game over/start screen
  - speed/scatter/chase/frightened timings
 
 
 -- CLEANUP --
 
-fruit
 
 ghost house stuff
 
