@@ -1,11 +1,11 @@
 NEXT--
  - speed/scatter/chase/frightened timings
+ - ghost house stuff
 
 
 -- CLEANUP --
 
 
-ghost house stuff
 
 basic sounds
 graphics
