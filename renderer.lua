@@ -213,8 +213,22 @@ function renderer.drawGhosts(ghosts, config)
             love.graphics.circle("fill", ghost.x * pixelSize - (tileSize / 3), ghost.y * pixelSize - (tileSize / 3), tileSize * .3);
             love.graphics.circle("fill", ghost.x * pixelSize + (tileSize / 3), ghost.y * pixelSize - (tileSize / 3), tileSize * .3);
             love.graphics.setColor(0,0,0);
-            love.graphics.circle("fill", ghost.x * pixelSize - (tileSize / 3), ghost.y * pixelSize - (tileSize / 3), tileSize * .15);
-            love.graphics.circle("fill", ghost.x * pixelSize + (tileSize / 3), ghost.y * pixelSize - (tileSize / 3), tileSize * .15);
+            if ghost.nextDir and ghost.nextDir == "down" then
+                love.graphics.circle("fill", ghost.x * pixelSize - (tileSize / 3), ghost.y * pixelSize - (tileSize / 3) + pixelSize, tileSize * .15);
+                love.graphics.circle("fill", ghost.x * pixelSize + (tileSize / 3), ghost.y * pixelSize - (tileSize / 3) + pixelSize, tileSize * .15);
+            elseif ghost.nextDir and ghost.nextDir == "up" then
+                love.graphics.circle("fill", ghost.x * pixelSize - (tileSize / 3), ghost.y * pixelSize - (tileSize / 3) - pixelSize, tileSize * .15);
+                love.graphics.circle("fill", ghost.x * pixelSize + (tileSize / 3), ghost.y * pixelSize - (tileSize / 3) - pixelSize, tileSize * .15);
+            elseif ghost.nextDir and ghost.nextDir == "left" then
+                love.graphics.circle("fill", ghost.x * pixelSize - (tileSize / 3) - pixelSize, ghost.y * pixelSize - (tileSize / 3), tileSize * .15);
+                love.graphics.circle("fill", ghost.x * pixelSize + (tileSize / 3) - pixelSize, ghost.y * pixelSize - (tileSize / 3), tileSize * .15);
+            elseif ghost.nextDir and ghost.nextDir == "right" then
+                love.graphics.circle("fill", ghost.x * pixelSize - (tileSize / 3) + pixelSize, ghost.y * pixelSize - (tileSize / 3), tileSize * .15);
+                love.graphics.circle("fill", ghost.x * pixelSize + (tileSize / 3) + pixelSize, ghost.y * pixelSize - (tileSize / 3), tileSize * .15);
+            else
+                love.graphics.circle("fill", ghost.x * pixelSize - (tileSize / 3), ghost.y * pixelSize - (tileSize / 3), tileSize * .15);
+                love.graphics.circle("fill", ghost.x * pixelSize + (tileSize / 3), ghost.y * pixelSize - (tileSize / 3), tileSize * .15);
+            end
         end
     end
 end
