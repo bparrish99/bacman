@@ -26,7 +26,6 @@ setup.startGame = function()
         x = 16 * PIXELS_PER_TILE,
         y = 25.5 * PIXELS_PER_TILE,
         xTile, yTile = pixelToTile(14 * PIXELS_PER_TILE, 23.5 * PIXELS_PER_TILE),
-        speed = 1.3,
         direction = "left",
         startX = 16 * PIXELS_PER_TILE,
         startY = 25.5 * PIXELS_PER_TILE,
@@ -42,8 +41,6 @@ setup.startGame = function()
             startX = 16 * PIXELS_PER_TILE,
             startY = 13.5 * PIXELS_PER_TILE,
             direction = "left",
-            mode = "scatter",
-            speed = .85,
             scatterX=30,scatterY=3,
             setTarget = function(self, pac)
                 -- Example: Blinky targets Pac-Man's current tile
@@ -59,8 +56,6 @@ setup.startGame = function()
             startX = 14 * PIXELS_PER_TILE,
             startY = 13.5 * PIXELS_PER_TILE,
             direction = "left",
-            mode = "scatter",
-            speed = .85,
             scatterX=3, scatterY=3,
             setTarget = function(self, pac)
                 -- Example: Blinky targets Pac-Man's current tile
@@ -90,8 +85,6 @@ setup.startGame = function()
             startX = 18 * PIXELS_PER_TILE,
             startY = 13.5 * PIXELS_PER_TILE,
             direction = "left",
-            mode = "scatter",
-            speed = .85,
             scatterX = 30,
             scatterY = 33,
             setTarget = function(self, pac, ghosts)
@@ -138,8 +131,6 @@ setup.startGame = function()
             startX = 20 * PIXELS_PER_TILE,
             startY = 13.5 * PIXELS_PER_TILE,
             direction = "left",
-            mode = "scatter",
-            speed = .85,
             setTarget = function(self, pac)
                 -- Note: self.xTile/yTile are not updated during movement, 
                 --   use pixelToTile(self.x, self.y) to get Clyde's current tile position.
@@ -166,7 +157,13 @@ setup.startGame = function()
     timer.startup = 2
     gameState.halted = true
     gameState.level = 1
-    
+    gameState.ghostMode = "scatter"
+
+    pac.speed = Maze.getPacSpeed(gameState.level, "norm")
+    for i, ghost in ipairs(ghosts) do
+        ghost.speed = Maze.getGhostSpeed(gameState.level, "norm")
+    end
+
     return colors, renderConfig, pac, ghosts, dots, powerPellets
 end
 

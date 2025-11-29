@@ -190,13 +190,13 @@ function renderer.drawGhosts(ghosts, config)
 
     for i,ghost in ipairs(ghosts) do
         if (ghost.mode ~= "dead") then
-            if (ghost.mode == "frightened") then
+            if (ghost.frightenedTime) then
                 -- Blink blue/white rapidly in final 2 seconds, else steady blue
-                if timer.ghostMode < 7 then
+                if ghost.frightenedTime > 2 then
                     love.graphics.setColor(.3, .3, 1)
                 else
                     -- Blinking: alternate color every 0.25 seconds in last 2 seconds
-                    local blink = math.floor((timer.ghostMode - 7) / 0.25) % 2 == 0
+                    local blink = math.floor(ghost.frightenedTime / 0.25) % 2 == 0
                     if blink then
                         love.graphics.setColor(.3, .3, 1)
                     else

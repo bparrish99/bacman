@@ -131,9 +131,8 @@ local fruits = {
     }
 }
 
-
 -- Define level configurations with ranges
-local levelConfigs = {
+local fruitConfigs = {
     { range = {1, 1}, fruit = fruits.cherry },
     { range = {2, 2}, fruit = fruits.strawberry },
     { range = {3, 4}, fruit = fruits.peach },
@@ -144,14 +143,111 @@ local levelConfigs = {
     { range = {13, math.huge}, fruit = fruits.key },
 }
 
-maze.getLevelConfig = function(level)
-    for _, config in ipairs(levelConfigs) do
+local levelTimings = {
+    { range = {1, 1}, timings = {
+        [0] = "scatter",
+        [7] = "chase",
+        [27] = "scatter",
+        [34] = "chase",
+        [54] = "scatter",
+        [59] = "chase",
+        [79] = "scatter",
+        [84] = "chase"
+    }},
+    { range = {2, 4}, timings = {
+        [0] = "scatter",
+        [7] = "chase",
+        [27] = "scatter",
+        [34] = "chase",
+        [54] = "scatter",
+        [59] = "chase",
+    }},
+    { range = {5, math.huge}, timings = {
+        [0] = "scatter",
+        [5] = "chase",
+        [25] = "scatter",
+        [30] = "chase",
+        [50] = "scatter",
+        [55] = "chase",
+    }}
+}
+
+local pacSpeeds = {
+    { range = {1, 1}, speed = { norm = .8, frightened = .9 } },
+    { range = {2, 4}, speed = { norm = .9, frightened = .95 } },
+    { range = {5, 20}, speed = { norm = 1, frightened = 1 } },
+    { range = {21, math.huge}, speed = { norm = .9, frightened = .9 } }
+}
+
+local ghostSpeeds = {
+    { range = {1, 1}, speed = { norm = .75, frightened = .5, tunnel = .4 } },
+    { range = {2, 4}, speed = { norm = .85, frightened = .55, tunnel = .45 } },
+    { range = {5, 20}, speed = { norm = .95, frightened = .6, tunnel = .5 } },
+    { range = {21, math.huge}, speed = { norm = .95, frightened = .95, tunnel = .5 } }
+}
+
+local frightenedTimes = {
+    { range = {1, 1}, time = 6 },
+    { range = {2, 2}, time = 5 },
+    { range = {3, 3}, time = 4 },
+    { range = {4, 4}, time = 3 },
+    { range = {5, 5}, time = 2 },
+    { range = {6, 6}, time = 5 },
+    { range = {7, 8}, time = 2 },
+    { range = {9, 9}, time = 1 },
+    { range = {10, 10}, time = 5 },
+    { range = {11, 11}, time = 2 },
+    { range = {12, 13}, time = 1 },
+    { range = {14, 14}, time = 3 },
+    { range = {15, 16}, time = 1 },
+    { range = {18, 18}, time = 1 },
+}
+
+maze.getFrightenedTime = function(level)
+    for _, frightenedTime in ipairs(frightenedTimes) do
+        if level >= frightenedTime.range[1] and level <= frightenedTime.range[2] then
+            return frightenedTime.time
+        end
+    end
+end
+
+maze.getGhostSpeed = function(level, mode)
+    for _, ghostSpeed in ipairs(ghostSpeeds) do
+        if level >= ghostSpeed.range[1] and level <= ghostSpeed.range[2] then
+            return ghostSpeed.speed[mode] * SPEED_FACTOR
+        end
+    end
+end
+
+maze.getPacSpeed = function(level, mode)
+    for _, pacSpeed in ipairs(pacSpeeds) do
+        if level >= pacSpeed.range[1] and level <= pacSpeed.range[2] then
+            return pacSpeed.speed[mode] * SPEED_FACTOR
+        end
+    end
+end
+
+maze.getGhostMode = function(level, seconds)
+    seconds = seconds
+    for _, timingConfig in ipairs(levelTimings) do
+        if level >= timingConfig.range[1] and level <= timingConfig.range[2] then
+            local timings = timingConfig.timings;
+            if (timings[seconds]) then
+                print("switching to " .. timings[seconds] .. " at second " .. seconds)
+                return timings[seconds]
+            end
+        end
+    end
+end
+
+maze.getFruit = function(level)
+    for _, config in ipairs(fruitConfigs) do
         if level >= config.range[1] and level <= config.range[2] then
-            return { fruit = config.fruit }
+            return config.fruit
         end
     end
     -- Default config if no match (should not happen)
-    return { fruit = "cherry" }
+    return fruits.cherry
 end
 
 return maze

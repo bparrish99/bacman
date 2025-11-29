@@ -1,4 +1,5 @@
 DEBUG=false
+SPEED_FACTOR = 1.4
 PIXEL_SIZE=3
 TILE_SIZE = PIXEL_SIZE * 8
 WALL_PADDING = 1
@@ -9,7 +10,7 @@ Renderer = require("renderer")
 Maze = require("maze")
 Setup = require("setup")
 
-timer = { powerBlink = 0, ghostMode = 0, t = 0 }
+timer = { powerBlink = 0, t = 0 }
 
 gameState = {
     mode = "attract",
@@ -82,21 +83,29 @@ function love.update(dt)
                         ghost.x = ghost.startX
                         ghost.y = ghost.startY
                         ghost.direction = "left"
-                        ghost.speed = 0.85
+                        ghost.speed = Maze.getGhostSpeed(gameState.level, "norm")
                     end
                     timer.startup = 2
                     timer.fruit = false
                     for i, ghost in ipairs(ghosts) do
-                        ghost.mode = "scatter"
+                        ghost.mode = false
+                        ghost.frightenedTime = false
                     end
-                    timer.ghostMode = 0
-                    
+                    timer.oldSeconds = false
+                    timer.seconds = 0
+                    gameState.ghostMode = "scatter"
+
                     -- New round
                     if #dots == 0 and #powerPellets == 0 then
                         dots = Maze.dots()
                         powerPellets = Maze.powerPellets()
                         gameState.betweenRounds = false
                         gameState.level = gameState.level + 1
+                        pac.speed = Maze.getPacSpeed(gameState.level, "norm")
+                        for i, ghost in ipairs(ghosts) do
+                            ghost.speed = Maze.getGhostSpeed(gameState.level, "norm")
+                        end
+                                         
                     end
                 end
             end
@@ -117,6 +126,44 @@ function love.update(dt)
             end
         else
 
+            local anyGhostsFrightened = false
+            for i, ghost in ipairs(ghosts) do
+                if ghost.frightenedTime then 
+                    anyGhostsFrightened = true
+                    break
+                end
+            end
+
+            if (not anyGhostsFrightened) then  
+                pac.speed = Maze.getPacSpeed(gameState.level, "norm")
+                -- Check for new ghost mode
+                if not timer.seconds then timer.seconds = 0 end
+                timer.seconds = timer.seconds + dt;
+                local secondsFloor = math.floor(timer.seconds)
+                if not timer.oldSeconds or secondsFloor > timer.oldSeconds then
+                    local newMode = Maze.getGhostMode(gameState.level, secondsFloor)
+                    if newMode then -- if anything was returned, its time to switch
+                        gameState.ghostMode = newMode
+
+                        if (timer.oldSeconds) then -- don't reverse when first setting scattered
+                            -- reverse ghosties
+                            for i, ghost in ipairs(ghosts) do
+                                if (not ghost.frightenedTime and ghost.mode ~= "dead") then
+                                    print("REVERSIES!!!" .. timer.oldSeconds)
+                                    if ghost.direction == "left" then ghost.direction = "right"
+                                    elseif ghost.direction == "right" then ghost.direction = "left"
+                                    elseif ghost.direction == "up" then ghost.direction = "down"
+                                    else ghost.direction = "up"
+                                    end
+                                end
+                            end
+                        end
+                        timer.oldSeconds = secondsFloor
+                    end
+
+
+                end
+            end
             -- tunnel
             if pac.x < PIXELS_PER_TILE and pac.direction == "left" then pac.x = (#maze[1]-1)*PIXELS_PER_TILE end
             if pac.x > (#maze[1]-1)*PIXELS_PER_TILE and pac.direction == "right" then pac.x=PIXELS_PER_TILE end
@@ -145,19 +192,22 @@ function love.update(dt)
                         table.remove(powerPellets, i);
                         gameState.score = gameState.score + 50;
                         dotEaten = true;
+                        pac.speed = Maze.getPacSpeed(gameState.level, "frightened")
                         for i, ghost in ipairs(ghosts) do
                             gameState.ghostValue = 200
                             if ghost.mode ~= "dead" then 
-                                ghost.mode = "frightened"
-                                ghost.speed = .5
-                                if ghost.direction == "left" then ghost.direction = "right"
-                                elseif ghost.direction == "right" then ghost.direction = "left"
-                                elseif ghost.direction == "up" then ghost.direction = "down"
-                                else ghost.direction = "up"
+                                local frightenedTime = Maze.getFrightenedTime(gameState.level) -- frightened timer
+                                if frightenedTime then
+                                    ghost.frightenedTime = frightenedTime
+                                    ghost.speed = Maze.getGhostSpeed(gameState.level, "frightened")
+                                    if ghost.direction == "left" then ghost.direction = "right"
+                                    elseif ghost.direction == "right" then ghost.direction = "left"
+                                    elseif ghost.direction == "up" then ghost.direction = "down"
+                                    else ghost.direction = "up"
+                                    end
                                 end
                             end
                         end
-                        timer.ghostMode = 1 -- right now, this should force 8 seconds, refactor
                     end
                 end
             end
@@ -169,26 +219,6 @@ function love.update(dt)
                 gameState.betweenRounds = true
             end
 
-            if (timer.ghostMode > 9) then
-                timer.ghostMode = 0;
-                for i, ghost in ipairs(ghosts) do
-                    if (ghost.mode ~= "frightened" and ghost.mode ~= "dead") then
-                        if ghost.direction == "left" then ghost.direction = "right"
-                        elseif ghost.direction == "right" then ghost.direction = "left"
-                        elseif ghost.direction == "up" then ghost.direction = "down"
-                        else ghost.direction = "up"
-                        end
-                    end
-                    if ghost.mode == "chase" or ghost.mode == "frightened" then 
-                        ghost.mode = "scatter"
-                        ghost.speed = .85
-                    elseif ghost.mode == "scatter" then 
-                        ghost.mode = "chase"
-                        ghost.speed = .85
-                    end
-                end
-            end
-        
             for i, ghost in ipairs(ghosts) do
 
                 -- tunnel
@@ -196,17 +226,17 @@ function love.update(dt)
                 if ghost.x > (#maze[1]-1)*PIXELS_PER_TILE and ghost.direction == "right" then ghost.x=PIXELS_PER_TILE end
                 ghost.xTile, ghost.yTile = pixelToTile(ghost.x, ghost.y)
         
-                if (ghost.mode == "scatter") then
+                if ghost.mode == "dead" then
+                    ghost.targetX, ghost.targetY = pixelToTile(ghost.startX, ghost.startY)
+                elseif (gameState.ghostMode == "scatter") then
                     ghost.targetX = ghost.scatterX
                     ghost.targetY = ghost.scatterY
-                elseif ghost.mode == "dead" then
-                    ghost.targetX, ghost.targetY = pixelToTile(ghost.startX, ghost.startY)
                 else
                     ghost:setTarget(pac, ghosts)
                 end
                 ghost.xTile, ghost.yTile = pixelToTile(ghost.x, ghost.y);
                 if ghost.direction == "left" then
-                    ghost.x = ghost.x - ghost.speed
+                    ghost.x = ghost.x - (ghost.speed)
                     if (ghost.x % PIXELS_PER_TILE <= PIXELS_PER_TILE / 2) then 
                         if ((maze[ghost.yTile][ghost.xTile - 1] ~= 1 and maze[ghost.yTile][ghost.xTile - 1] ~= 2) or ghost.nextDir == "up" or ghost.nextDir == "down") then
                             ghost.x = ghost.xTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
@@ -214,7 +244,7 @@ function love.update(dt)
                         end
                     end  
                 elseif ghost.direction == "right" then
-                    ghost.x = ghost.x + ghost.speed
+                    ghost.x = ghost.x + (ghost.speed)
                     if (ghost.x % PIXELS_PER_TILE >= PIXELS_PER_TILE / 2) then 
                         if ((maze[ghost.yTile][ghost.xTile + 1] ~= 1 and maze[ghost.yTile][ghost.xTile + 1] ~= 2) or ghost.nextDir == "up" or ghost.nextDir == "down") then
                             ghost.x = ghost.xTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
@@ -222,7 +252,7 @@ function love.update(dt)
                         end
                     end  
                 elseif ghost.direction == "up" then
-                    ghost.y = ghost.y - ghost.speed
+                    ghost.y = ghost.y - (ghost.speed)
                     if (ghost.y % PIXELS_PER_TILE <= PIXELS_PER_TILE / 2) then 
                         if ((maze[ghost.yTile - 1][ghost.xTile] ~= 1 and maze[ghost.yTile - 1][ghost.xTile] ~= 2) or ghost.nextDir == "left" or ghost.nextDir == "right") then
                             ghost.y = ghost.yTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
@@ -230,7 +260,7 @@ function love.update(dt)
                         end
                     end  
                 elseif ghost.direction == "down" then
-                    ghost.y = ghost.y + ghost.speed
+                    ghost.y = ghost.y + (ghost.speed)
                     if (ghost.y % PIXELS_PER_TILE >= PIXELS_PER_TILE / 2) then 
                         if ((maze[ghost.yTile + 1][ghost.xTile] ~= 1 and maze[ghost.yTile + 1][ghost.xTile] ~= 2) or ghost.nextDir == "left" or ghost.nextDir == "right") then
                             ghost.y = ghost.yTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
@@ -240,24 +270,24 @@ function love.update(dt)
                 end
                 local newXTile, newYTile = pixelToTile(ghost.x, ghost.y)
                 if maze[ghost.yTile][ghost.xTile] == 1 and maze[newYTile][newXTile] == 2 and ghost.mode ~= "dead" then
-                    ghost.preTunnelSpeed = ghost.speed
-                    ghost.speed = .5
+                    ghost.speed = Maze.getGhostSpeed(gameState.level, "tunnel")
                 end
-                if maze[ghost.yTile][ghost.xTile] == 2 and maze[newYTile][newXTile] == 1 and ghost.speed == .5 then
-                    ghost.speed = ghost.preTunnelSpeed
+                if maze[ghost.yTile][ghost.xTile] == 2 and maze[newYTile][newXTile] == 1 and not ghost.frightenedTime then
+                    ghost.speed = Maze.getGhostSpeed(gameState.level, "norm")
                 end
                 local startXTile, startYTile = pixelToTile(ghost.startX, ghost.startY)
                 if ghost.mode == "dead" and newXTile == startXTile and newYTile == startYTile then
-                    ghost.mode = "chase"
-                    ghost.speed=.85
+                    ghost.mode = false
+                    ghost.speed = Maze.getGhostSpeed(gameState.level, "norm")
                 end
 
                 -- check for eating or been eaten
                 if newXTile == pac.xTile and newYTile == pac.yTile then
-                    if ghost.mode == "frightened" and not gameState.ateGhost then
+                    if ghost.frightenedTime and ghost.frightenedTime > 0 and not gameState.ateGhost then
                         ghost.direction = "left"
                         gameState.halted = true
                         gameState.ateGhost = ghost.name
+                        ghost.frightenedTime = false
                         ghost.mode = "dead"
                         ghost.speed = 2
                         timer.ateGhost = 1
@@ -310,7 +340,7 @@ function love.update(dt)
                         end
                     end
         
-                    if (ghost.mode == "chase" or ghost.mode == "scatter" or ghost.mode == "dead") then
+                    if (not ghost.frightenedTime) then
                         local closest
                         local closestDist = math.huge
                         for _, cand in ipairs(candidates) do
@@ -325,7 +355,7 @@ function love.update(dt)
                         if closest then
                             setDirection(ghost, closest, "decided to ")
                         end
-                    elseif ghost.mode == "frightened" then
+                    else
                         -- In tunnels or corners it's possible to have no valid candidate tiles.
                         -- Guard against that so we don't pass a nil target to setDirection.
                         if #candidates > 0 then
@@ -337,12 +367,21 @@ function love.update(dt)
                         end
                     end
                 end
+
+                if ghost.frightenedTime and ghost.frightenedTime > 0 then
+                    ghost.frightenedTime = ghost.frightenedTime - dt
+                    if ghost.frightenedTime <= 0 then
+                        ghost.frightenedTime = false
+                        ghost.speed = Maze.getGhostSpeed(gameState.level, "norm")
+                    end
+                end
+
             end
             
             local oldX, oldY = pac.x, pac.y
             if (not dotEaten) then
                 if (pac.direction == "left") then
-                    pac.x = pac.x - pac.speed;
+                    pac.x = pac.x - (pac.speed);
                     if (maze[pac.yTile][pac.xTile - 1] ~= 1 and maze[pac.yTile][pac.xTile -1] ~= 2) then
                         if (pac.x % PIXELS_PER_TILE <= PIXELS_PER_TILE / 2) then 
                             pac.x = pac.xTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
@@ -351,7 +390,7 @@ function love.update(dt)
                 end
             
                 if (pac.direction == "right") then
-                    pac.x = pac.x + pac.speed;
+                    pac.x = pac.x + (pac.speed);
                     if (maze[pac.yTile][pac.xTile + 1] ~= 1 and maze[pac.yTile][pac.xTile +1] ~= 2) then
                         if (pac.x % PIXELS_PER_TILE >= PIXELS_PER_TILE / 2) then 
                             pac.x = pac.xTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
@@ -360,7 +399,7 @@ function love.update(dt)
                 end
 
                 if (pac.direction == "up") then
-                    pac.y = pac.y - pac.speed;
+                    pac.y = pac.y - (pac.speed);
                     if (maze[pac.yTile - 1][pac.xTile] ~= 1 and maze[pac.yTile-1][pac.xTile] ~= 2) then
                         if (pac.y % PIXELS_PER_TILE <= PIXELS_PER_TILE / 2) then 
                             pac.y = pac.yTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
@@ -369,7 +408,7 @@ function love.update(dt)
                 end
 
                 if (pac.direction == "down") then
-                    pac.y = pac.y + pac.speed;
+                    pac.y = pac.y + (pac.speed);
                     if (maze[pac.yTile + 1][pac.xTile] ~= 1 and maze[pac.yTile + 1][pac.xTile] ~= 2) then
                         if (pac.y % PIXELS_PER_TILE >= PIXELS_PER_TILE / 2) then 
                             pac.y = pac.yTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
@@ -410,7 +449,7 @@ function love.update(dt)
 
                 -- check for fruit eaten
                 if pac.moved and timer.fruit and timer.fruit > 0 then
-                    local fruit = Maze.getLevelConfig(gameState.level).fruit
+                    local fruit = Maze.getFruit(gameState.level)
                     if pac.x > fruit.x - pac.speed and pac.x < fruit.x + pac.speed and pac.y > fruit.y - pac.speed and pac.y < fruit.y + pac.speed then
                         timer.fruit = 0
                         timer.fruitScore = 2
@@ -422,7 +461,7 @@ function love.update(dt)
 
             if timer.fruit and timer.fruit > 0 then timer.fruit = timer.fruit - dt end
             if timer.fruitScore and timer.fruitScore > 0 then timer.fruitScore = timer.fruitScore - dt end
-            timer.ghostMode = timer.ghostMode + dt
+
         end
         -- Update animation timers
         timer.powerBlink = (timer.powerBlink + dt) % 0.30
@@ -495,7 +534,7 @@ function love.draw()
 
         if timer.fruit and timer.fruit > 0 then
             love.graphics.setColor(.7, .2, .5)
-            local fruitConfig = Maze.getLevelConfig(gameState.level).fruit
+            local fruitConfig = Maze.getFruit(gameState.level)
             love.graphics.setLineWidth(PIXEL_SIZE);
             local fruitX = fruitConfig.x * PIXEL_SIZE;
             local fruitY = fruitConfig.y * PIXEL_SIZE;
@@ -510,7 +549,7 @@ function love.draw()
         end
 
         if timer.fruitScore and timer.fruitScore > 0 then
-            local fruit = Maze.getLevelConfig(gameState.level).fruit
+            local fruit = Maze.getFruit(gameState.level)
             love.graphics.setColor(1,1,1);
             local scoreFont = love.graphics.newFont(PIXEL_SIZE * 6)
             love.graphics.setFont(scoreFont)
@@ -543,7 +582,7 @@ function love.draw()
         love.graphics.setColor(1,.8,.8);
         love.graphics.print(gameState.highScore, TILE_SIZE * (#maze[1]/1.5), PIXEL_SIZE)
         love.graphics.setColor(.2,.2,1);
-        love.graphics.print(Maze.getLevelConfig(gameState.level).fruit.name, TILE_SIZE * (#maze[1]/1.5), (#maze - 2) * TILE_SIZE - (PIXEL_SIZE * 4))
+        love.graphics.print(Maze.getFruit(gameState.level).name, TILE_SIZE * (#maze[1]/1.5), (#maze - 2) * TILE_SIZE - (PIXEL_SIZE * 4))
 
         -- lives left
         local mouthAngle = math.rad(50)
