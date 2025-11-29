@@ -1,5 +1,5 @@
 DEBUG=false
-SPEED_FACTOR = 1.4
+SPEED_FACTOR = 1.25
 PIXEL_SIZE=3
 TILE_SIZE = PIXEL_SIZE * 8
 WALL_PADDING = 1
@@ -451,7 +451,7 @@ function love.update(dt)
                 if pac.moved and timer.fruit and timer.fruit > 0 then
                     local fruit = Maze.getFruit(gameState.level)
                     if pac.x > fruit.x - pac.speed and pac.x < fruit.x + pac.speed and pac.y > fruit.y - pac.speed and pac.y < fruit.y + pac.speed then
-                        timer.fruit = 0
+                        timer.fruit = false
                         timer.fruitScore = 2
                         gameState.score = gameState.score + fruit.score
                     end

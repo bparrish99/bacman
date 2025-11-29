@@ -1,11 +1,12 @@
 NEXT--
- - speed/scatter/chase/frightened timings
- - ghost stuff #1 (starting in there, going back there, etc)
+ 
+ - elroy
+ - ghost house stuff #1 (starting in there, going back there, etc)
  
  SHIP 0.01
  
 
- - ghost stuff 2 (leaving timings)
+ - ghost house stuff 2 (leaving timings)
 
 
 -- CLEANUP --
@@ -15,3 +16,10 @@ NEXT--
 basic sounds
 graphics
 
+
+
+BUGS
+----
+Dead speed coming out of tunnel
+Sometimes two frightened ghosts kill you.
+Sometimes the ghost amount starts moving around?!?!
