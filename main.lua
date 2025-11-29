@@ -90,7 +90,6 @@ function love.update(dt)
                         ghost.x = ghost.startX
                         ghost.y = ghost.startY
                         ghost.direction = "left"
-                        ghost.nextDir = ghost.direction
                         ghost.speed = Maze.getGhostSpeed(gameState.level, "norm")
                     end
                     timer.startup = 2
@@ -215,7 +214,6 @@ function love.update(dt)
                                     elseif ghost.direction == "up" then ghost.direction = "down"
                                     else ghost.direction = "up"
                                     end
-                                    ghost.nextDir = ghost.direction
                                 end
                             end
                         end
