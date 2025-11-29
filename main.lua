@@ -79,6 +79,7 @@ function love.update(dt)
                     pac.x = pac.startX
                     pac.y = pac.startY
                     pac.direction = "left"
+                    pac.mouf = 4
                     for i, ghost in ipairs(ghosts) do
                         ghost.x = ghost.startX
                         ghost.y = ghost.startY
@@ -149,7 +150,6 @@ function love.update(dt)
                             -- reverse ghosties
                             for i, ghost in ipairs(ghosts) do
                                 if (not ghost.frightenedTime and ghost.mode ~= "dead") then
-                                    print("REVERSIES!!!" .. timer.oldSeconds)
                                     if ghost.direction == "left" then ghost.direction = "right"
                                     elseif ghost.direction == "right" then ghost.direction = "left"
                                     elseif ghost.direction == "up" then ghost.direction = "down"

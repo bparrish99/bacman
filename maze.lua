@@ -233,7 +233,7 @@ maze.getGhostMode = function(level, seconds)
         if level >= timingConfig.range[1] and level <= timingConfig.range[2] then
             local timings = timingConfig.timings;
             if (timings[seconds]) then
-                print("switching to " .. timings[seconds] .. " at second " .. seconds)
+--                print("switching to " .. timings[seconds] .. " at second " .. seconds)
                 return timings[seconds]
             end
         end
