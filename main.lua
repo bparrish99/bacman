@@ -45,6 +45,12 @@ function love.load()
     gameState.halted = true
 end
 
+local wakka = love.audio.newSource("sounds/pacman_chomp.wav", "static")
+local eatGhostSound = love.audio.newSource("sounds/pacman_eatghost.wav", "static")
+local eatFruitSound = love.audio.newSource("sounds/pacman_eatfruit.wav", "static")
+local deathSound = love.audio.newSource("sounds/pacman_death.wav", "static")
+local extraPacSound = love.audio.newSource("sounds/pacman_extrapac.wav", "static")
+
 local pressedKeys = {}
 
 function love.keypressed(key)
@@ -84,6 +90,7 @@ function love.update(dt)
                         ghost.x = ghost.startX
                         ghost.y = ghost.startY
                         ghost.direction = "left"
+                        ghost.nextDir = false
                         ghost.speed = Maze.getGhostSpeed(gameState.level, "norm")
                     end
                     timer.startup = 2
@@ -119,6 +126,7 @@ function love.update(dt)
                 if timer.ateGhost <=0 then 
                     gameState.halted = false
                     gameState.ateGhost = false
+                    timer.ateGhost = false
                 end
             end
             if (timer.roundOver and timer.roundOver > 0) then
@@ -149,7 +157,7 @@ function love.update(dt)
                         if (timer.oldSeconds) then -- don't reverse when first setting scattered
                             -- reverse ghosties
                             for i, ghost in ipairs(ghosts) do
-                                if (not ghost.frightenedTime and ghost.mode ~= "dead") then
+                                if (not ghost.frightenedTime and not ghost.dead) then
                                     if ghost.direction == "left" then ghost.direction = "right"
                                     elseif ghost.direction == "right" then ghost.direction = "left"
                                     elseif ghost.direction == "up" then ghost.direction = "down"
@@ -180,6 +188,7 @@ function love.update(dt)
                 for i, dot in ipairs(dots) do
                     if dot[1] == pacXTile and dot[2] == pacYTile then
                         table.remove(dots, i);
+                        love.audio.play(wakka);
                         if #dots == 70 or #dots == 170 then
                             timer.fruit = 9
                         end
@@ -190,12 +199,13 @@ function love.update(dt)
                 for i, powerPellet in ipairs(powerPellets) do
                     if powerPellet[1] == pacXTile and powerPellet[2] == pacYTile then
                         table.remove(powerPellets, i);
+                        love.audio.play(wakka);
                         gameState.score = gameState.score + 50;
                         dotEaten = true;
                         pac.speed = Maze.getPacSpeed(gameState.level, "frightened")
                         for i, ghost in ipairs(ghosts) do
                             gameState.ghostValue = 200
-                            if ghost.mode ~= "dead" then 
+                            if not ghost.dead then 
                                 local frightenedTime = Maze.getFrightenedTime(gameState.level) -- frightened timer
                                 if frightenedTime then
                                     ghost.frightenedTime = frightenedTime
@@ -226,7 +236,7 @@ function love.update(dt)
                 if ghost.x > (#maze[1]-1)*PIXELS_PER_TILE and ghost.direction == "right" then ghost.x=PIXELS_PER_TILE end
                 ghost.xTile, ghost.yTile = pixelToTile(ghost.x, ghost.y)
         
-                if ghost.mode == "dead" then
+                if ghost.dead then
                     ghost.targetX, ghost.targetY = pixelToTile(ghost.startX, ghost.startY)
                 elseif (gameState.ghostMode == "scatter") then
                     ghost.targetX = ghost.scatterX
@@ -269,15 +279,15 @@ function love.update(dt)
                     end  
                 end
                 local newXTile, newYTile = pixelToTile(ghost.x, ghost.y)
-                if maze[ghost.yTile][ghost.xTile] == 1 and maze[newYTile][newXTile] == 2 and ghost.mode ~= "dead" then
+                if maze[ghost.yTile][ghost.xTile] == 1 and maze[newYTile][newXTile] == 2 and not ghost.dead then
                     ghost.speed = Maze.getGhostSpeed(gameState.level, "tunnel")
                 end
-                if maze[ghost.yTile][ghost.xTile] == 2 and maze[newYTile][newXTile] == 1 and not ghost.frightenedTime then
+                if maze[ghost.yTile][ghost.xTile] == 2 and maze[newYTile][newXTile] == 1 and not ghost.frightenedTime and not ghost.dead then
                     ghost.speed = Maze.getGhostSpeed(gameState.level, "norm")
                 end
                 local startXTile, startYTile = pixelToTile(ghost.startX, ghost.startY)
-                if ghost.mode == "dead" and newXTile == startXTile and newYTile == startYTile then
-                    ghost.mode = false
+                if ghost.dead and newXTile == startXTile and newYTile == startYTile then
+                    ghost.dead = false
                     ghost.speed = Maze.getGhostSpeed(gameState.level, "norm")
                 end
 
@@ -288,13 +298,15 @@ function love.update(dt)
                         gameState.halted = true
                         gameState.ateGhost = ghost.name
                         ghost.frightenedTime = false
-                        ghost.mode = "dead"
+                        ghost.dead = true
+                        love.audio.play(eatGhostSound);
                         ghost.speed = 2
                         timer.ateGhost = 1
                         gameState.score = gameState.score + gameState.ghostValue
                         gameState.ghostValue = gameState.ghostValue * 2
-                    elseif ghost.mode ~= "dead" then -- ate pacman
+                    elseif not ghost.dead then -- ate pacman
                         gameState.halted = true
+                        love.audio.play(deathSound);
                         gameState.lives = gameState.lives - 1
                         if gameState.lives == 0 then
                             if gameState.score > gameState.highScore then gameState.highScore = gameState.score end
@@ -452,6 +464,7 @@ function love.update(dt)
                     local fruit = Maze.getFruit(gameState.level)
                     if pac.x > fruit.x - pac.speed and pac.x < fruit.x + pac.speed and pac.y > fruit.y - pac.speed and pac.y < fruit.y + pac.speed then
                         timer.fruit = false
+                        love.audio.play(eatFruitSound);
                         timer.fruitScore = 2
                         gameState.score = gameState.score + fruit.score
                     end
@@ -467,6 +480,7 @@ function love.update(dt)
         timer.powerBlink = (timer.powerBlink + dt) % 0.30
         if oldScore < 10000 and gameState.score >= 10000 then
             gameState.lives = gameState.lives + 1
+            love.audio.play(extraPacSound)
         end
     end
 end

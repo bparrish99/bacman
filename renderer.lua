@@ -189,7 +189,7 @@ function renderer.drawGhosts(ghosts, config)
     local pixelSize = config.pixelSize
 
     for i,ghost in ipairs(ghosts) do
-        if (ghost.mode ~= "dead") then
+        if (not ghost.dead) then
             if (ghost.frightenedTime) then
                 -- Blink blue/white rapidly in final 2 seconds, else steady blue
                 if ghost.frightenedTime > 2 then
