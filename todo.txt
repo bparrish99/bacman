@@ -1,11 +1,10 @@
 NEXT--
- 
- - elroy
  - ghost house stuff #1 (starting in there, going back there, etc)
+ - fix ateGhost shit (see below)
  
  SHIP 0.01
  
-
+ - elroy
  - ghost house stuff 2 (leaving timings)
 
 
@@ -13,13 +12,14 @@ NEXT--
 
 
 
-basic sounds
-graphics
+better graphics
+better sounds
 
 
 
 BUGS
 ----
-Dead speed coming out of tunnel
 Sometimes two frightened ghosts kill you.
 Sometimes the ghost amount starts moving around?!?!
+Dead guys shouldn't stop when a ghost is eaten
+Something's still wrong with reversals
