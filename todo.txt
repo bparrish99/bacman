@@ -1,5 +1,5 @@
 NEXT--
-
+ - gamepad
  - fruit/level graphics?
  - ghost graphics?
  - options?
