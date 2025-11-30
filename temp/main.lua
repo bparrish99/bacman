@@ -491,7 +491,7 @@ function love.update(dt)
                         pac.x = pac.xTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2)
                     end
                 end
-                if pac.x ~= oldX or pac.y ~= oldY then pac.moved = true end
+                if math.floor(pac.x) ~= math.floor(oldX) or math.floor(pac.y) ~= math.floor(oldY) then pac.moved = true end
 
                 -- check for fruit eaten
                 if pac.moved and timer.fruit and timer.fruit > 0 then

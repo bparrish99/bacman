@@ -14,3 +14,4 @@ NEXT--
 BUGS
 ----
 Dead guys shouldn't stop when a ghost is eaten
+FPS issue with pac eating (should skip a whole frame, not just one update(dt))
