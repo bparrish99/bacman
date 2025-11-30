@@ -1,4 +1,5 @@
 DEBUG=false
+FPS = 60
 SPEED_FACTOR = 1.25
 PIXEL_SIZE=3
 TILE_SIZE = PIXEL_SIZE * 8
@@ -100,7 +101,7 @@ end
 
 function love.load()
     love.window.setTitle("Pinbac-Man")
-    love.window.setMode(windowWidth, windowHeight, {resizable = false})
+    love.window.setMode(windowWidth, windowHeight, {resizable = false, vsync = true})
     love.graphics.setBackgroundColor({0,0,0})
     timer.startup = 2
     gameState.halted = true
@@ -314,7 +315,7 @@ function love.update(dt)
 
                 if ghost.leaving then
                     if not ghost.leavingTimer then
-                        ghost.y = ghost.y - Maze.getGhostSpeed(gameState.level, "leaving");
+                        ghost.y = ghost.y - Maze.getGhostSpeed(gameState.level, "leaving") * FPS * dt;
                         local leavingX, leavingY = pixelToTile(ghost.x, ghost.y)
                         if (leavingY == 14 and ghost.y % PIXELS_PER_TILE <= PIXELS_PER_TILE / 2) then
                             ghost.leaving = false
@@ -332,7 +333,7 @@ function love.update(dt)
                     end
                 else
                     if ghost.direction == "left" then
-                        ghost.x = ghost.x - (ghost.speed)
+                        ghost.x = ghost.x - (ghost.speed * FPS * dt)
                         if (ghost.x % PIXELS_PER_TILE <= PIXELS_PER_TILE / 2) then 
                             if ((maze[ghost.yTile][ghost.xTile - 1] ~= 1 and maze[ghost.yTile][ghost.xTile - 1] ~= 2) or ghost.nextDir == "up" or ghost.nextDir == "down") then
                                 ghost.x = ghost.xTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
@@ -340,7 +341,7 @@ function love.update(dt)
                             end
                         end  
                     elseif ghost.direction == "right" then
-                        ghost.x = ghost.x + (ghost.speed)
+                        ghost.x = ghost.x + (ghost.speed * FPS * dt)
                         if (ghost.x % PIXELS_PER_TILE >= PIXELS_PER_TILE / 2) then 
                             if ((maze[ghost.yTile][ghost.xTile + 1] ~= 1 and maze[ghost.yTile][ghost.xTile + 1] ~= 2) or ghost.nextDir == "up" or ghost.nextDir == "down") then
                                 ghost.x = ghost.xTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
@@ -348,7 +349,7 @@ function love.update(dt)
                             end
                         end  
                     elseif ghost.direction == "up" then
-                        ghost.y = ghost.y - (ghost.speed)
+                        ghost.y = ghost.y - (ghost.speed * FPS * dt)
                         if (ghost.y % PIXELS_PER_TILE <= PIXELS_PER_TILE / 2) then 
                             if ((maze[ghost.yTile - 1][ghost.xTile] ~= 1 and maze[ghost.yTile - 1][ghost.xTile] ~= 2) or ghost.nextDir == "left" or ghost.nextDir == "right") then
                                 ghost.y = ghost.yTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
@@ -356,7 +357,7 @@ function love.update(dt)
                             end
                         end  
                     elseif ghost.direction == "down" then
-                        ghost.y = ghost.y + (ghost.speed)
+                        ghost.y = ghost.y + (ghost.speed * FPS * dt)
                         if (ghost.y % PIXELS_PER_TILE >= PIXELS_PER_TILE / 2) then 
                             if ((maze[ghost.yTile + 1][ghost.xTile] ~= 1 and maze[ghost.yTile + 1][ghost.xTile] ~= 2 and maze[ghost.yTile + 1][ghost.xTile] ~= 3) or ghost.nextDir == "left" or ghost.nextDir == "right") then
                                 ghost.y = ghost.yTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
@@ -426,7 +427,7 @@ function love.update(dt)
             local oldX, oldY = pac.x, pac.y
             if (not dotEaten) then
                 if (pac.direction == "left") then
-                    pac.x = pac.x - (pac.speed);
+                    pac.x = pac.x - (pac.speed * FPS * dt);
                     if (maze[pac.yTile][pac.xTile - 1] ~= 1 and maze[pac.yTile][pac.xTile -1] ~= 2) then
                         if (pac.x % PIXELS_PER_TILE <= PIXELS_PER_TILE / 2) then 
                             pac.x = pac.xTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
@@ -435,7 +436,7 @@ function love.update(dt)
                 end
             
                 if (pac.direction == "right") then
-                    pac.x = pac.x + (pac.speed);
+                    pac.x = pac.x + (pac.speed * FPS * dt);
                     if (maze[pac.yTile][pac.xTile + 1] ~= 1 and maze[pac.yTile][pac.xTile +1] ~= 2) then
                         if (pac.x % PIXELS_PER_TILE >= PIXELS_PER_TILE / 2) then 
                             pac.x = pac.xTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
@@ -444,7 +445,7 @@ function love.update(dt)
                 end
 
                 if (pac.direction == "up") then
-                    pac.y = pac.y - (pac.speed);
+                    pac.y = pac.y - (pac.speed * FPS * dt);
                     if (maze[pac.yTile - 1][pac.xTile] ~= 1 and maze[pac.yTile-1][pac.xTile] ~= 2) then
                         if (pac.y % PIXELS_PER_TILE <= PIXELS_PER_TILE / 2) then 
                             pac.y = pac.yTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
@@ -453,7 +454,7 @@ function love.update(dt)
                 end
 
                 if (pac.direction == "down") then
-                    pac.y = pac.y + (pac.speed);
+                    pac.y = pac.y + (pac.speed * FPS * dt);
                     if (maze[pac.yTile + 1][pac.xTile] ~= 1 and maze[pac.yTile + 1][pac.xTile] ~= 2) then
                         if (pac.y % PIXELS_PER_TILE >= PIXELS_PER_TILE / 2) then 
                             pac.y = pac.yTile * PIXELS_PER_TILE - (PIXELS_PER_TILE / 2);
