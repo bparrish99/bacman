@@ -1,9 +1,8 @@
 NEXT--
- - ghost house stuff #1 (starting in there, going back there, etc)
- - fix ateGhost shit (see below)
- 
- SHIP 0.01
- 
+
+ - fruit/level graphics?
+ - ghost graphics?
+ - options?
  - elroy
  - ghost house stuff 2 (leaving timings)
 
@@ -12,15 +11,6 @@ NEXT--
 
 
 
-better graphics
-better sounds
-
-
-
 BUGS
 ----
-Sometimes two frightened ghosts kill you.
---- As SOON as you fucking hit the first one, it thinks you die, plays death sound, etc.
-Sometimes the ghost amount starts moving around?!?!
 Dead guys shouldn't stop when a ghost is eaten
-Something's still wrong with reversals
