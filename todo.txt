@@ -20,6 +20,7 @@ better sounds
 BUGS
 ----
 Sometimes two frightened ghosts kill you.
+--- As SOON as you fucking hit the first one, it thinks you die, plays death sound, etc.
 Sometimes the ghost amount starts moving around?!?!
 Dead guys shouldn't stop when a ghost is eaten
 Something's still wrong with reversals
